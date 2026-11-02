@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chef – Nigerian Food Ordering</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;1,400;1,700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Header -->
+  <header>
+    <div class="name" id="header-name">Chef's Table</div>
+    <button class="cart-btn" id="header-cart">
+      <span class="cart-badge" id="cart-badge">0</span>
+    </button>
+  </header>
+
+  <!-- Belt section -->
+  <section class="belt-section">
+    <div class="belt-container"></div>
+    <p class="section-label">Lunch belt</p>
+    <h1 class="section-heading">Fresh Nigerian food, turning right on the page.</h1>
+    <p class="section-caption">Hover to stop the belt, flick to spin it, pick a plate to order.</p>
+    <button class="btn-see-full" id="see-full-menu">See full menu</button>
+  </section>
+
+  <!-- Main content: menu grid + other sections -->
+  <main>
+    <ul class="menu-grid" id="menu-grid"></ul>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <p id="footer-address">12 Lagos Street, Abuja, Nigeria</p>
+    <p id="footer-hours">Mon–Sat: 11 AM – 10 PM</p>
+    <a class="btn-whatsapp" id="footer-whatsapp" target="_blank" rel="noopener"></a>
+  </footer>
+
+  <!-- Cart drawer (hidden by default) -->
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="header">
+      <span>My order</span>
+      <button class="close" aria-label="Close drawer">×</button>
+    </div>
+    <div class="items" id="cart-items"></div>
+    <div class="actions">
+      <button class="action-btn" data-qty="-1">−</button>
+      <span class="total">₦0</span>
+      <button class="action-btn checkout" id="checkout-btn">Checkout</button>
+    </div>
+    <form id="delivery-form">
+      <input placeholder="Name" required />
+      <input placeholder="Phone" required />
+      <input placeholder="Delivery address" required />
+      <button type="submit" class="checkout">Place order</button>
+    </form>
+  </div>
+
+  <!-- JavaScript modules -->
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>

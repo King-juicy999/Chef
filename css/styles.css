@@ -1,0 +1,222 @@
+/**
+ * /css/styles.css — Global design tokens and layout
+ *
+ * This file contains:
+ * 1. CSS custom properties (colour tokens, spacing, radius, shadows) from DESIGN.md
+ * 2. Base reset and box‑sizing
+ * 3. Typographic scale (Fraunces headings, Manrope body)
+ * 4. Component styles for header, belt, menu grid, footer, cart, dialog
+ * 5. Responsive breakpoints from DESIGN.md
+ * 6. Reduced‑motion prefers‑color‑scheme media features
+ */
+
+/* ---- colour tokens from DESIGN.md ---- */
+:root {
+  --background: #FBF6EE;
+  --foreground: #2A1A12;
+  --card: #FFFFFF;
+  --muted: #F1E7D8;
+  --muted-foreground: #7A6657;
+  --border: #E6D8C4;
+  --ring: #C2410C;
+  --accent: #C2410C;
+
+  /* tier ring colours, chart 1 to 5 */
+  --tier-1: #4C8C4A;
+  --tier-2: #D9A21B;
+  --tier-3: #E4761B;
+  --tier-4: #C0392B;
+  --tier-5: #6B2D5C;
+}
+
+/* dark mode under prefers-color-scheme */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #1D130C;
+    --foreground: #F5EBDD;
+    --card: #271B13;
+    --muted: #2E211A;
+    --muted-foreground: #B8A292;
+    --border: #3D2C21;
+    --ring: #F4874B;
+    --accent: #E46A33;
+
+    --tier-1: #5FA45D;
+    --tier-2: #E5B444;
+    --tier-3: #EF8A42;
+    --tier-4: #D65445;
+    --tier-5: #9A5290;
+  }
+}
+
+/* general page appearance */
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: "Manrope", system-ui, sans-serif;
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* typography: Fraunces headings, Manrope body */
+h1, h2, h3, h4, h5, h6 {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 700;
+  line-height: 1.2;
+}
+p { margin: 0 0 1rem; }
+
+/* page container, max width */
+.page { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
+
+/* focus ring (visible) */
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+/* ---- header ---- */
+header { position: sticky; top: 0; background: var(--card); z-index: 50; }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; }
+.header .name { font-family: "Fraunces", Georgia, serif; font-size: 1.5rem; font-weight: 700; }
+.header .cart-btn {
+  position: relative; display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 1rem; background: transparent; border: 2px solid var(--foreground);
+  color: var(--foreground); font-family: inherit; font-size: 0.875rem; cursor: pointer;
+  border-radius: 999px; transition: background 0.2s, color 0.2s;
+}
+.Header .cart-btn:hover { background: var(--muted); }
+.Header .cart-badge {
+  position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px;
+  background: var(--ring); color: #fff; font-size: 0.625rem; border-radius: 999px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ---- belt section ---- */
+.belt-section { padding: 2rem 0; }
+.section-label {
+  display: block; text-transform: uppercase; font-size: 0.625rem; letter-spacing: 0.2em;
+  color: var(--muted-foreground); margin-bottom: 0.25rem;
+}
+.section-heading { font-size: clamp(1.75rem, 5vw, 2.5rem); margin: 0 0 0.5rem; }
+.section-caption {
+  font-size: 0.875rem; color: var(--muted-foreground);
+  line-height: 1.7; max-width: 60ch;
+}
+.btn-see-full {
+  margin-top: 1rem; padding: 0.75rem 1.5rem; background: transparent;
+  border: 2px solid var(--foreground); color: var(--foreground);
+  font-family: inherit; font-size: 0.875rem; border-radius: 999px; cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.btn-see-full:hover { background: var(--foreground); color: var(--card); }
+
+/* ---- SVG belt ---- */
+.belt-svg { width: 100%; height: 0; padding-bottom: 42%; position: relative; }
+.belt-svg svg {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+}
+
+/* the stadium‑shaped loop – an oval / stadium path */
+.belt-path {
+  fill: none; stroke: var(--border); stroke-width: 2;
+  stroke-dasharray: 0; stroke-dashoffset: 0;
+  transform-box: fill-box; transform-origin: 50% 50%;
+}
+
+/* back lane plates are smaller and shaded – drawn by JS with lower opacity */
+.plate {
+  position: absolute;
+  cursor: pointer;
+  transition: transform 0.12s ease-out;
+}
+.plate:hover { transform: scale(1.04); }
+.plate.selected { transform: translateY(-24px) scale(1.08); z-index: 10; }
+.plate.selected .price-chip {
+  opacity: 1; transform: translateY(-32px) scale(1.05);
+}
+.plate .plate-img {
+  display: block; width: 100%; height: 100%; border-radius: 999px;
+  object-fit: contain; filter: grayscale(0%);
+}
+.plate .plate-img.broken { visibility: hidden; }
+.plate .price-chip {
+  position: absolute; bottom: -28px; left: 50%; transform: translateX(-50%);
+  background: var(--card); padding: 0.25rem 0.5rem;
+  font-size: 0.625rem; font-weight: 600; color: var(--foreground);
+  border-radius: 999px; white-space: nowrap; box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  opacity: 0; transition: opacity 0.12s, transform 0.12s;
+}
+
+/* slat seams – moving vertical lines */
+.slat {
+  position: absolute; top: 0; left: 0; bottom: 0; width: 4px;
+  background: repeating-linear-gradient(
+    0deg, var(--border), var(--border) 2px, var(--muted) 2px, var(--muted) 4px
+  );
+  pointer-events: none;
+}
+
+/* ---- dialog ---- */
+.dialog { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(4px); align-items: center; justify-content: center; }
+.dialog[open] { display: flex; }
+.dialog .content { position: relative; width: 90%; max-width: 640px; background: var(--card);
+  border-radius: 16px; overflow: hidden; display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+.dialog .plate-img-large { width: 100%; height: 400px; object-fit: contain; }
+.dialog .details { padding: 1.5rem; }
+.dialog .details h2 { margin: 0 0 0.5rem; font-family: "Fraunces", Georgia, serif; }
+.dialog .details .price { font-size: 1.25rem; color: var(--foreground); margin: 0.5rem 0; }
+.dialog .details .tier-ring {
+  display: inline-block; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--tier-1); /* will be overridden per dish via inline style */
+}
+.dialog .close-btn {
+  position: absolute; top: 1rem; right: 1rem; background: transparent; border: none;
+  font-size: 1.25rem; color: var(--muted-foreground); cursor: pointer;
+}
+
+/* overlay click‑to‑close */
+.dialog .bg-overlay { position: absolute; inset: 0; background: transparent; }
+
+/* reduced motion tweaks */
+@media (prefers-reduced-motion: reduce) {
+  .plate { transition: none; }
+  .dialog .content { animation: none; }
+  .belt-path { transition: none; }
+}
+
+/* ---- menu grid (full width below belt) ---- */
+.menu-grid { display: grid; gap: 1.5rem; margin-top: 2rem; }
+@media (min-width: 640px) { .menu-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 1024px) { .menu-grid { grid-template-columns: repeat(3, 1fr); } }
+
+/* ---- cart drawer ---- */
+.cart-drawer { position: fixed; right: 0; top: 0; height: 100vh; width: 320px;
+  background: var(--card); box-shadow: -8px 0 24px rgba(0,0,0,0.15); transform: translateX(100%);
+  transition: transform 0.3s ease-out; z-index: 100; }
+.cart-drawer.open { transform: translateX(0); }
+.cart-drawer .header { padding: 1rem; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.cart-drawer .close { background: transparent; border: none; font-size: 1.25rem; cursor: pointer; }
+.cart-drawer .items { padding: 1rem; max-height: 70vh; overflow-y: auto; }
+.cart-drawer .item { display: flex; justify-content: space-between; align-items: baseline; margin: 0.75rem 0; }
+.cart-drawer .item .qty { display: inline-block; min-width: 24px; text-align: center; }
+.cart-drawer .actions { padding: 1rem; border-top: 1px solid var(--border); display: flex; gap: 1rem; justify-content: flex-end; }
+.cart-drawer .action-btn { background: transparent; border: 1px solid var(--border); padding: 0.25rem 0.5rem; cursor: pointer; }
+.cart-drawer .total { font-family: "Fraunces", Georgia, serif; font-size: 1.25rem; margin-top: 1rem; }
+.cart-drawer .checkout { width: 100%; padding: 0.75rem; background: var(--foreground); color: var(--card);
+  border: none; border-radius: 999px; font-family: inherit; font-size: 0.875rem; cursor: pointer; margin-top: 1rem; }
+.cart-drawer .checkout:hover { background: #E46A33; }
+
+/* mobile stacked hero */
+@media (max-width: 1023px) {
+  .hero { flex-direction: column-reverse; text-align: center; }
+  .hero .belt-area { order: 2; width: 100%; }
+  .hero .text-area { order: 1; width: 100%; }
+}
+
+/* two‑column hero from 1024px up */
+@media (min-width: 1024px) {
+  .hero { flex-direction: row; align-items: start; }
+  .hero .text-area { width: 45%; padding-right: 2rem; }
+  .hero .belt-area { width: 55%; }
+}
