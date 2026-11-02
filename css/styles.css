@@ -1,5 +1,5 @@
 /**
- * /css/styles.css — Global design tokens and layout
+ * /css/styles.css Global design tokens and layout
  *
  * This file contains:
  * 1. CSS custom properties (colour tokens, spacing, radius, shadows) from DESIGN.md
@@ -116,14 +116,14 @@ header { position: sticky; top: 0; background: var(--card); z-index: 50; }
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
 }
 
-/* the stadium‑shaped loop – an oval / stadium path */
+/* the stadium-shaped loop - an oval / stadium path */
 .belt-path {
   fill: none; stroke: var(--border); stroke-width: 2;
   stroke-dasharray: 0; stroke-dashoffset: 0;
   transform-box: fill-box; transform-origin: 50% 50%;
 }
 
-/* back lane plates are smaller and shaded – drawn by JS with lower opacity */
+/* back lane plates are smaller and shaded - drawn by JS with lower opacity */
 .plate {
   position: absolute;
   cursor: pointer;
@@ -147,7 +147,7 @@ header { position: sticky; top: 0; background: var(--card); z-index: 50; }
   opacity: 0; transition: opacity 0.12s, transform 0.12s;
 }
 
-/* slat seams – moving vertical lines */
+/* slat seams - moving vertical lines */
 .slat {
   position: absolute; top: 0; left: 0; bottom: 0; width: 4px;
   background: repeating-linear-gradient(

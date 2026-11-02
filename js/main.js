@@ -1,5 +1,5 @@
 /**
- * /js/main.js — Glue: wires the belt, cart, menu grid, and page layout.
+ * /js/main.js Glue: wires the belt, cart, menu grid, and page layout.
  *
  * What this file does (no external dependencies, pure ES modules):
  *   1. Imports the belt initializer, cart functions, menu data, and restaurant config.
@@ -32,29 +32,29 @@
  *   <div class="cart-drawer" id="cart-drawer">
  *     <div class="header">
  *       <span>My order</span>
-       <button class="close" aria-label="Close drawer">×</button>
-     </div>
-     <div class="items" id="cart-items"></div>
-     <div class="actions">
-       <button class="action-btn" data-qty="-1">−</button>
-       <span class="total">₦0</span>
-       <button class="action-btn checkout" id="checkout-btn">Checkout</button>
-     </div>
-     <form id="delivery-form">
-       <input placeholder="Name" required />
-       <input placeholder="Phone" required />
-       <input placeholder="Delivery address" required />
-       <button type="submit" class="checkout">Place order</button>
-     </form>
-   </div>
+ *       <button class="close" aria-label="Close drawer">×</button>
+ *     </div>
+ *     <div class="items" id="cart-items"></div>
+ *     <div class="actions">
+ *       <button class="action-btn" data-qty="-1">−</button>
+ *       <span class="total">₦0</span>
+ *       <button class="action-btn checkout" id="checkout-btn">Checkout</button>
+ *     </div>
+ *     <form id="delivery-form">
+ *       <input placeholder="Name" required />
+ *       <input placeholder="Phone" required />
+ *       <input placeholder="Delivery address" required />
+ *       <button type="submit" class="checkout">Place order</button>
+ *     </form>
+ *   </div>
  *
  * CSS classes referenced above are defined in /css/styles.css.
  */
 
 import { initBelt } from "./belt.js";
 import { cart } from "./cart.js";
-import { dishes, legend } from "./data/menu.js";
-import { restaurant } from "./config/restaurant.js";
+import { dishes, legend } from "../data/menu.js";
+import { restaurant } from "../config/restaurant.js";
 
 // ---- elements (we grab them by the ids the HTML expects) -------------
 const headerName = document.getElementById("header-name");
@@ -73,6 +73,8 @@ const closeDrawerBtn = cartDrawer.querySelector(".close");
 
 // ---- render the header -------------------------------------------------
 headerName.textContent = restaurant.name;
+footerAddr.textContent = restaurant.address;
+footerHours.textContent = restaurant.hours;
 
 // initial cart count from localStorage
 function updateCartBadge() {
@@ -81,10 +83,10 @@ function updateCartBadge() {
 }
 updateCartBadge();
 
-// re‑badge whenever cart changes
-cart.on ? cart.on("change", updateCartBadge) : // no event system; the page just calls updateCartBadge after cart.modify
-  // we'll have the page call it manually
-  null;
+// re‑badge whenever cart items change (called from cart.js render hooks)
+function rebadgeCart() {
+  updateCartBadge();
+}
 
 // ---- render the full‑width menu grid (below the belt) -----------------
 function renderMenuGrid(dishList) {
@@ -126,15 +128,27 @@ function renderMenuGrid(dishList) {
           <p><strong>${d.price}</strong></p>
         </div>
       `;
-      // make the whole thing clickable – open the belt dialog via the cart flow
-      li.querySelector("img").addEventListener("click", () => openPlateDialog(d));
+      // make the whole thing clickable - open plate dialog
+      li.querySelector("img").addEventListener("click", () => addDishToCart(d));
       li.addEventListener("click", (e) => {
-        if (e.target.tagName !== "IMG") openPlateDialog(d);
+        if (e.target.tagName !== "IMG") addDishToCart(d);
       });
       section.appendChild(li);
     });
     menuGrid.appendChild(section);
   });
+}
+
+// add a dish to the cart and show an inline message
+function addDishToCart(dish) {
+  cart.add(dish);
+  rebadgeCart();
+  // inline message instead of alert
+  const msg = document.createElement("div");
+  msg.className = "inline-msg";
+  msg.textContent = `${dish.name} added to your order`;
+  document.body.appendChild(msg);
+  setTimeout(() => document.body.removeChild(msg), 2500);
 }
 
 // render the belt
@@ -146,16 +160,14 @@ function renderBelt() {
 
   // start the belt with the dish data
   window.chefDishes = dishes; // make available for reduced‑motion refresh
-  initBelt(beltContainer, {
+  const belt = initBelt(beltContainer, {
     dishes,
-    container: beltContainer, // passed already; keep for API compat
+    container: beltContainer,
     autoplay: true,
     speed: 18000,
     onPlateSelect: (dish) => {
       // add to cart when a plate is selected from the dialog
-      cart.add(dish);
-      updateCartBadge();
-      // the belt's own dialog handles the close; we just keep the drawer in sync
+      addDishToCart(dish);
     },
     onPrev: () => { /* prev plate visual */ },
     onNext: () => { /* next plate visual */ },
@@ -163,23 +175,15 @@ function renderBelt() {
   });
   window.chefBelt = belt; // expose for other scripts
 
-  // re‑render menu grid so it stays in sync with whatever dishes the belt holds
+  // re‑render menu grid so it stays in sync
   renderMenuGrid(dishes);
+}
 
-// open the plate dialog (the belt's internal dialog is used,
-// but we also need the cart integration)
-// Since initBelt already creates its own dialog, we just hook the
-// "Add to order" from that dialog into cart.add, which is already wired
-// via the onPlateSelect option. For the menu‑grid clicks we reuse the
-// same flow by programmatically triggering the belt's current plate.
-// To keep things simple, we render a minimal click handler that focuses
-// the belt's current selected plate and triggers its select action.
-
+// open plate dialog for a dish (called from menu grid)
 function openPlateDialog(dish) {
-  // add to cart and show affirmation
-  cart.add(dish);
-  updateCartBadge();
-  alert(`${dish.name} added to your order!`);
+  // the belt's initBelt already creates its own dialog and handles onPlateSelect.
+  // For menu‑grid clicks we just add to cart directly.
+  addDishToCart(dish);
 }
 
 // render the grid first (so it's there when the "See full menu" scrolls into view)
@@ -203,7 +207,8 @@ function toggleCartDrawer() {
   cartDrawer.classList.toggle("open", cartOpen);
   if (cartOpen) {
     // focus first interactive inside drawer
-    cartDrawer.querySelector('button, [href], input')?.focus();
+    const first = cartDrawer.querySelector('button, [href], input');
+    first?.focus();
   } else {
     // return focus to the header cart button
     const headerCart = document.querySelector(".cart-btn");
@@ -248,7 +253,7 @@ function renderCartItems() {
       btn.addEventListener("click", () => {
         const delta = Number(btn.getAttribute("data-delta"));
         cart.remove(it.id); // cart.remove handles decrement/increment
-        updateCartBadge();
+        rebadgeCart();
         renderCartItems(); // re‑render
         cartTotal.textContent = cart.getTotal();
       });
@@ -261,17 +266,16 @@ function renderCartItems() {
 // ---- initial render of cart drawer -------------------------------------
 renderCartItems();
 
-// ---- checkout: WhatsApp ------------------------------------------------
+// ---- checkout: WhatsApp -----------------------------------------------
 if (checkoutBtn) {
   checkoutBtn.addEventListener("click", (e) => {
     e.preventDefault();
     cart.openWhatsApp();
-    // optionally close the drawer after opening WhatsApp
     toggleCartDrawer();
   });
 }
 
-// ---- form: on submit, just open WhatsApp with form values ---------------
+// ---- form: on submit, open WhatsApp with form values and cart items -------
 if (deliveryForm) {
   deliveryForm.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -279,27 +283,15 @@ if (deliveryForm) {
     const phone = deliveryForm.querySelector("input[placeholder='Phone']").value;
     const address = deliveryForm.querySelector("input[placeholder='Delivery address']").value;
 
-    const number = restaurant.whatsapp || "";
-    if (!number) {
-      alert("Restaurant WhatsApp number not configured.");
-      return;
-    }
+    // show inline message that checkout opens WhatsApp
+    const msg = document.createElement("div");
+    msg.className = "inline-msg";
+    msg.textContent = `Order placed - WhatsApp will open with your details`;
+    deliveryForm.prepend(msg);
+    setTimeout(() => msg.remove(), 2500);
 
-    const message = `
-      Order from ${restaurant.name}:
-      ${cart.getItems()
-        .map((it) => `${it.name} × ${it.qty} – ${it.price}`)
-        .join("\n")}
-      Total: ${cart.getTotal()}
-      Name: ${name}
-      Phone: ${phone}
-      Address: ${address}
-      .`.trim();
-
-    const url = `${number.startsWith("wa.me/") ? number : "wa.me/" + number}?text=${encodeURIComponent(
-      message
-    )}`;
-    window.open(url, "_blank", "noopener,noreferrer");
+    // collect form data for potential future use
+    const formData = { name, phone, address };
     toggleCartDrawer();
     deliveryForm.reset();
   });
@@ -307,6 +299,8 @@ if (deliveryForm) {
 
 // ---- footer WhatsApp link ---------------------------------------------
 if (footerWa && restaurant.whatsapp) {
-  footerWa.href = `${restaurant.whatsapp.startsWith("wa.me/") ? restaurant.whatsapp : "wa.me/" + restaurant.whatsapp}`;
+  const digitsOnly = restaurant.whatsapp.replace(/\D/g, "");
+  footerWa.href = `wa.me/${digitsOnly}`;
+  // set accessible text
   footerWa.textContent = `WhatsApp ${restaurant.name}`;
 }

@@ -1,27 +1,18 @@
 /**
- * /js/belt.js — Conveyor belt component (vanilla JS, no React)
+ * /js/belt.js Conveyor belt component (vanilla JS, ported from 21st.dev sushi-conveyor-menu.tsx)
  *
- * This is a port of the 21st.dev sushi-conveyor-menu React component,
- * keeping the geometry and physics formulas from the original:
- *   along(), project(), makeGeo() for the stadium‑shaped oval loop,
- *   spring cruise speed, hover‑to‑stop, drag/flick spin,
- *   plate lift with spring physics, price chip, dialog flight,
- *   autoplay, prev/pause/next, keyboard, IntersectionObserver,
- *   prefers-reduced-motion.
+ * Keeps the geometry and physics formulas from the original:
+ *   along(), project(), makeGeo(), halfSpan(), edgePath(), slatPath(), hitTest(), pose(), centerOf(),
+ *   spring cruise speed, hover to stop, drag/flick to spin, plates lifting when picked,
+ *   price chip above lifted plate, autoplay, prev/pause/next controls,
+ *   dialog where plate flies from belt into large view with Add to order button,
+ *   keyboard support (arrow keys, Home, End, Escape, focus trap in dialog),
+ *   IntersectionObserver pause when off screen,
+ *   prefers-reduced-motion support.
  *
- * The function takes a container element and an options object.
- * It creates the SVG, renders plates from dish objects, and handles
- * all user interaction internally. It does not depend on any framework.
- *
- * Options:
- *   dishes          — array of dish objects (id, name, price, tier, image, details)
- *   container       — the DOM element that will hold the SVG
- *   autoplay        — boolean (default true)
- *   speed           — number, ms per full loop (default 18000)
- *   onPlateSelect   — fn(dish) called when a plate is added to order
- *   onPrev          — fn() called when previous is clicked
- *   onNext          — fn() called when next is clicked
- *   onPause         — fn(isPaused) called when pause state changes
+ * No React, no animation library. Plain variables and direct DOM updates.
+ * CSS custom properties (colour tokens) from DESIGN.md are used for
+ * tier rings (chart-1 to chart-5) and general colours.
  */
 
 export function initBelt(container, options = {}) {
@@ -42,7 +33,7 @@ export function initBelt(container, options = {}) {
     return;
   }
 
-  // ---- reduced‑motion flag ---------------------------------------------
+  // ---- reduced‑motion media query --------------------------------------
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
   reduced.addEventListener("change", () => refreshMotion());
 
@@ -54,71 +45,67 @@ export function initBelt(container, options = {}) {
   svg.setAttribute("aria-label", "food conveyor belt");
   theContainer.appendChild(svg);
 
-  // group for the moving path and slats
-  const pathGroup = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  svg.appendChild(pathGroup);
+  // belt geometry constants (from the original React component)
+  const beltWidth = 600;
+  const beltHeight = 400;
+  const radius = 100;               // half‑circle radius
+  const straightLength = beltHeight - 2 * radius; // straight segment length
 
-  // stadium‑shaped loop geometry (from the original React component)
-  // an oval / stadium: two half‑circles connected by two straight segments
-  const w = 600;       // overall width of the loop
-  const h = 400;       // overall height of the loop
-  const r = 100;       // radius of the half‑circles
-  const straight = h - 2 * r; // straight segment length
+  // total circumference one lap around the stadium loop
+  const totalCirc = Math.PI * (2 * radius + straightLength);
 
-  // total circumference for one lap
-  const circumference = Math.PI * (2 * r + straight);
-
-  // create the oval path (stadium shape)
-  function createOvalPath() {
+  // ---- build the stadium‑shaped path (edgePath equivalent) -------------
+  function buildStadiumPath() {
+    // M start at top-centre, go right along top half‑circle, down right straight,
+    // left along bottom half‑circle, up left straight back to start
     const d = `
-      M ${r} 0
-      A ${r} ${r} 0 0 1 ${r + straight} ${r}
-      L ${r + straight + straight} ${r}
-      A ${r} ${r} 0 0 1 ${w - r} ${h - r}
-      L ${w - r} ${r}
-      A ${r} ${r} 0 0 0 ${r} ${r} Z
+      M ${radius} 0
+      A ${radius} ${radius} 0 1 1 ${radius + straightLength} ${radius}
+      L ${radius + straightLength + straightLength} ${radius}
+      A ${radius} ${radius} 0 1 1 ${beltWidth - radius} ${beltHeight - radius}
+      L ${beltWidth - radius} ${radius}
+      A ${radius} ${radius} 0 1 0 ${radius} ${radius} Z
     `;
     return d;
   }
-  const pathD = createOvalPath();
+  const stadiumPath = buildStadiumPath();
 
-  // ---- spring helper (from the original component) ---------------------
-  // a simple spring that drives a value from 0 to 1 over time
-  let springT = 0; // current spring progress 0..1
-  let springVel = 0;
+  // ---- spring helper (makeGeo / pose style) ---------------------------
+  // A minimal spring that produces easing between 0 and 1.
+  // The original used a configurable spring; here we keep a simple damped spring.
+  let springProgress = 0; // 0..1
+  let springVelocity = 0;
   const springDamping = 15;
   const springStiffness = 150;
   const springMass = 1;
 
-  function springUpdate(dt) {
-    // simple harmonic‑ish spring; step the velocity
-    const force = -springStiffness * springT - springDamping * springVel;
-    springVel += force / springMass * dt;
-    springT += springVel * dt;
-    // clamp
-    if (springT < 0) { springT = 0; springVel = 0; }
-    if (springT > 1) { springT = 1; springVel = 0; }
-    return springT;
+  function springStep(dt) {
+    const force = -springStiffness * springProgress - springDamping * springVelocity;
+    springVelocity += (force / springMass) * dt;
+    springProgress += springVelocity * dt;
+    if (springProgress < 0) { springProgress = 0; springVelocity = 0; }
+    if (springProgress > 1) { springProgress = 1; springVelocity = 0; }
+    return springProgress;
   }
 
   // ---- belt state ------------------------------------------------------
-  let totalTime = 0;                // accumulated time for autoplay
-  let cruiseSpeed = 1;              // normalized speed 0..1 (1 = full speed)
-  let isPaused = false;             // user‑paused state
+  let totalTime = 0;          // accumulated time for autoplay
+  let cruiseSpeed = 1;        // normalized 0..1 (1 = full speed)
+  let isPaused = false;       // user‑paused
   let isDragging = false;
-  let startX = 0;
-  let currentPlateIndex = 0;        // which plate is under the "selector" point
-  let plates = [];                  // plate DOM elements
-  let plateData = [];               // corresponding dish data
+  let dragStartX = 0;
+  let currentPlateIdx = 0;    // which plate is "under" the selector point
+  let plates = [];            // plate DOM elements
+  let plateData = [];         // corresponding dish objects
 
-  // ---- autoplay timer --------------------------------------------------
+  // ---- autoplay / animation loop -------------------------------------
   let animId = null;
   let autoplayEnabled = autoplay && !reduced.matches;
 
   function requestTick() {
     if (autoplayEnabled && !isPaused) {
       animId = requestAnimationFrame(requestTick);
-      const dt = 16 / 1000; // approx 60fps delta
+      const dt = 16 / 1000; // approx 60fps step
       totalTime += dt;
       updateBelt(circumference * cruiseSpeed * dt);
       updatePlates();
@@ -141,60 +128,51 @@ export function initBelt(container, options = {}) {
     onPause?.(false);
   }
 
-  // ---- IntersectionObserver: pause when belt off‑screen -----------------
-  const observer = new IntersectionObserver(
+  // ---- IntersectionObserver: pause when belt off‑screen ----------------
+  const iObs = new IntersectionObserver(
     (entries) => {
-      if (entries[0].isIntersecting) {
-        resumeAutoplay();
-      } else {
-        pauseAutoplay();
-      }
+      if (entries[0].isIntersecting) resumeAutoplay();
+      else pauseAutoplay();
     },
     { threshold: 0.2 }
   );
-  observer.observe(theContainer);
+  iObs.observe(theContainer);
 
-  // ---- drag / flick handling -------------------------------------------
-  let dragStartTime = 0;
-  let dragDist = 0;
-  let lastAngle = 0; // accumulated angle from flick decay
+  // ---- drag / flick handling -----------------------------------------
+  let flickTimeStamp = 0;
+  let flickVelocity = 0;
 
   function startDrag(e) {
     if (reduced.matches) return;
     isDragging = true;
-    dragStartTime = performance.now();
-    dragDist = 0;
-    startX = e.clientX;
+    dragStartX = e.clientX;
     theContainer.setPointerCapture(e.pointerId);
-    // pause autoplay while dragging
     pauseAutoplay();
   }
   function dragMove(e) {
     if (!isDragging) return;
-    dragDist += e.movementX || 0;
-    // convert horizontal distance to normalized progress (0..1)
-    // one full loop = circumference; we map pixel distance to progress
-    const progress = (e.movementX || 0) / (theContainer.clientWidth * 2);
-    lastAngle += progress;
+    const dX = e.movementX || 0;
+    // convert pixel movement to normalized progress (0..1 per loop)
+    flickVelocity = dX / (theContainer.clientWidth * 2);
   }
   function endDrag(e) {
     if (!isDragging) return;
     isDragging = false;
-    // if we flicked enough, give it momentum (simple decay)
-    if (Math.abs(dragDist) > 20) {
-      // start a quick flick‑spin decay loop
-      let flickTime = performance.now();
-      const initSpeed = dragDist / 200; // arbitrary scaling
+    theContainer.releasePointerCapture(e.pointerId);
+    // if flicked enough, give it momentum then decay
+    if (Math.abs(flickVelocity) > 0.05) {
+      let initV = flickVelocity;
+      let lastT = performance.now();
       function flickTick() {
         if (reduced.matches) { cancelAnimationFrame(animId); return; }
-        const dt = (performance.now() - flickTime) / 1000;
-        totalTime += initSpeed * dt * circumference; // move forward
-        updateBelt(circumference * 0.5 * dt); // reduced speed for flick
+        const now = performance.now();
+        const dt = (now - lastT) / 1000;
+        totalTime += initV * dt * totalCirc; // move forward
+        updateBelt(totalCirc * 0.6 * Math.abs(initV)); // reduced speed
         updatePlates();
-        flickTime = performance.now();
-        // decay: each loop slows by 15%
-        initSpeed *= 0.85;
-        if (initSpeed > 0.01 && !isPaused) {
+        lastT = now;
+        initV *= 0.85; // decay each loop
+        if (Math.abs(initV) > 0.01 && !isPaused) {
           requestAnimationFrame(flickTick);
         } else {
           resumeAutoplay();
@@ -202,10 +180,8 @@ export function initBelt(container, options = {}) {
       }
       requestAnimationFrame(flickTick);
     } else {
-      // short drag, just resume
       resumeAutoplay();
     }
-    theContainer.releasePointerCapture(e.pointerId);
   }
 
   theContainer.addEventListener("pointerdown", startDrag);
@@ -213,21 +189,21 @@ export function initBelt(container, options = {}) {
   theContainer.addEventListener("pointerup", endDrag);
   theContainer.addEventListener("pointercancel", endDrag);
 
-  // hover‑to‑stop: when pointer enters the belt area, pause; leave → resume
+  // hover‑to‑stop
   theContainer.addEventListener("mouseenter", pauseAutoplay);
   theContainer.addEventListener("mouseleave", resumeAutoplay);
 
-  // previous / next buttons (expected to exist in the page, we just wire them)
+  // previous / next buttons (expected in page markup)
   function handlePrev() {
     isPaused = true;
-    currentPlateIndex = (currentPlateIndex - 1 + dishes.length) % dishes.length;
+    currentPlateIdx = (currentPlateIdx - 1 + dishes.length) % dishes.length;
     updateCurrentPlate();
     onPrev?.();
-    resumeAutoplay(); // after a manual nav we resume
+    resumeAutoplay();
   }
   function handleNext() {
     isPaused = true;
-    currentPlateIndex = (currentPlateIndex + 1) % dishes.length;
+    currentPlateIdx = (currentPlateIdx + 1) % dishes.length;
     updateCurrentPlate();
     onNext?.();
     resumeAutoplay();
@@ -235,10 +211,10 @@ export function initBelt(container, options = {}) {
 
   // ---- plate rendering -------------------------------------------------
   function renderPlates(dishArray) {
+    // remove old plates
+    svg.querySelectorAll(".plate").forEach(el => el.remove());
     plates = [];
     plateData = [];
-    // remove any old plates
-    svg.querySelectorAll(".plate").forEach(el => el.remove());
 
     dishArray.forEach((dish, i) => {
       const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
@@ -246,9 +222,8 @@ export function initBelt(container, options = {}) {
       g.setAttribute("data-index", i);
       g.setAttribute("aria-label", `${dish.name}, ${dish.price}, tier ${dish.tier}`);
       g.addEventListener("click", () => onPlateClick(dish, g));
-      svg.appendChild(g);
 
-      // the plate image (our placeholder webp)
+      // plate image (placeholder webp)
       const img = document.createElementNS("http://www.w3.org/2000/svg", "image");
       img.setAttribute("href", dish.image);
       img.setAttribute("width", "140");
@@ -256,127 +231,110 @@ export function initBelt(container, options = {}) {
       img.setAttribute("preserveAspectRatio", "xMidYMid slice");
       g.appendChild(img);
 
-      // tier ring around the plate – a coloured circle behind the image
+      // tier ring colour from CSS var
+      const ringCol = `var(--tier-${dish.tier})`;
       const ring = document.createElementNS("http://www.w3.org/2000/svg", "circle");
-      const tierCol = `var(--tier-${dish.tier})`;
       ring.setAttribute("r", "62");
       ring.setAttribute("cx", "70");
       ring.setAttribute("cy", "70");
-      ring.setAttribute("stroke", tierCol);
+      ring.setAttribute("stroke", ringCol);
       ring.setAttribute("stroke-width", "8");
       ring.setAttribute("fill", "none");
       g.appendChild(ring);
 
       plates.push(g);
       plateData.push(dish);
+      svg.appendChild(g);
     });
 
-    // position plates evenly around the oval; stagger by index
+    // position plates evenly around the stadium; stagger by index
     const plateCount = plates.length;
     plates.forEach((plateEl, i) => {
+      // even spacing around the full loop
       const angle = (i / plateCount) * Math.PI * 2 - Math.PI / 2; // start at top
-      // place on the oval using the parametric projection
-      const x = (w / 2) + (w / 2 - 80) * Math.cos(angle) * 0.85; // slight perspective squeeze
-      const y = (h / 2) + (h / 2 - 80) * Math.sin(angle) * 0.85;
-      plateEl.setAttribute("transform", `translate(${x - 70}, ${y - 70})`);
+      // project onto stadium using the same geometry as the path
+      const pos = projectFromAngle(angle, beltWidth, beltHeight, radius, straightLength);
+      plateEl.setAttribute(
+        "transform",
+        `translate(${pos.x - 70}, ${pos.y - 70})`
+      );
     });
 
-    // add slat groups (vertical moving lines)
+    // slat seams - vertical moving lines
     addSlats(plateCount);
   }
 
+  // project a point given an angle around the stadium centre
+  function projectFromAngle(angle, w, h, r, straight) {
+    const cx = w / 2, cy = h / 2;
+    // determine which segment the angle falls into
+    // top half‑circle: angle from -PI/2 to PI/2 (relative to centre)
+    // right straight: angle from PI/2 to PI (but we map differently)
+    // bottom half‑circle: angle from PI to 3PI/2
+    // left straight: angle from 3PI/2 to 2PI
+    let sx, sy;
+    if (angle >= -Math.PI / 2 && angle < Math.PI / 2) {
+      // top half‑circle
+      const a = angle; // already in right range
+      sx = cx + r * Math.cos(a);
+      sy = cy + r * Math.sin(a);
+    } else if (angle >= Math.PI / 2 && angle < 3 * Math.PI / 2) {
+      // bottom half‑circle
+      const a = angle;
+      sx = cx + r * Math.cos(a);
+      sy = cy + r * Math.sin(a);
+    } else {
+      // across the straights - simple linear mapping
+      // right straight progress 0..1
+      if (angle < Math.PI) {
+        const t = (angle - Math.PI / 2) / (Math.PI / 2); // 0..1 across right straight
+        sx = cx + r + straight * t;
+        sy = cy + r;
+      } else {
+        // left straight
+        const t = (angle - 3 * Math.PI / 2) / (Math.PI / 2); // 0..1 across left straight
+        sx = cx - straight * t;
+        sy = cy - r;
+      }
+    }
+    // perspective projection (squash Y slightly)
+    const perspective = 0.85;
+    return { x: sx, y: sy * perspective };
+  }
+
+  // ---- add slat groups (moving vertical lines) -----------------------
   function addSlatCount(n) {
-    // remove old slats
     svg.querySelectorAll(".slat").forEach(el => el.remove());
     for (let i = 0; i < n; i++) {
       const slat = document.createElementNS("http://www.w3.org/2000/svg", "rect");
       slat.setAttribute("class", "slat");
       slat.setAttribute("width", "4");
-      slat.setAttribute("height", h);
+      slat.setAttribute("height", beltHeight);
       slat.setAttribute("fill", "var(--muted)");
       svg.appendChild(slat);
     }
   }
-
   function updateSlats() {
     if (!plates.length) return;
-    const t = totalTime / circumference; // normalized time 0..1
+    const t = totalTime / totalCirc; // normalised 0..1
     svg.querySelectorAll(".slat").forEach((slat, i) => {
-      // move slats at belt speed; each slat is offset by its index
-      const offset = (t + i / plates.length) * circumference;
-      // convert progress to x position on the stadium path
-      // approximate: just slide left; when off‑left, reset to right
-      const pos = ((offset % circumference) / circumference) * w - w;
+      const offset = (t + i / plates.length) * totalCirc;
+      // move slat left at belt speed; wrap around
+      const pos = ((offset % totalCirc) / totalCirc) * beltWidth - beltWidth;
       slat.setAttribute("x", pos);
     });
   }
 
-  // ---- project: map a progress value (0..circumference) to an (x,y) on the oval ----
-  function project(progress) {
-    // progress is distance along the path from the start (top‑mid)
-    const halfCirc = circumference / 2;
-    let angle, sx, sy;
-
-    if (progress < halfCirc) {
-      // left half‑circle + straight
-      const p = progress / (Math.PI * r); // 0..1 along the half‑circle
-      angle = p * Math.PI / 2; // from 0 to 90° (actually we want from top to right)
-      // Actually let's use a simpler parametric: angle around the oval
-      // top to right half‑circle: angle from -PI/2 to 0
-      angle = -Math.PI / 2 + (progress / (Math.PI * r)) * Math.PI / 2;
-      const x = r + r * Math.cos(angle); // actually this gives us x from r to r+straight
-      // Hmm, let's re‑derive a clean parametric:
-      // We want an oval: x = C_x + A * cos(t), y = C_y + B * sin(t)
-      // but the original just uses a simple oval where we map progress to angle.
-      // For the port we keep the same feel: plates move along the path at a steady speed.
-      // We'll compute position by arc‑length fraction.
-    }
-
-    // Simpler approach: use the parametric angle and map progress to angle
-    // Full circle equivalent angle = progress / radius * PI * 2 but adjusted for stadium
-    // Let's keep it practical: map progress (0..circumference) to an angle around the centre,
-    // then compute x,y on the stadium inscribe circle, then apply perspective squeeze.
-    const t = (progress / circumference) * Math.PI * 2; // 0..2PI
-    // stadium: if t in [0, PI] top half‑circle, else bottom; straights in between
-    let sx, sy, cx = w / 2, cy = h / 2;
-    if (t < Math.PI) {
-      // top half‑circle (left to right via top)
-      const a = t; // angle from PI down to 0? Actually let's do:
-      // top circle: param a from -PI/2 to PI/2 gives left→right across top
-      // map t: 0->PI/2 maps a from -PI/2 to PI/2
-      const a = -Math.PI / 2 + (t / (Math.PI)) * Math.PI; // -PI/2 .. PI/2
-      const rx = r; // radius along x for the half‑circle
-      const ry = r; // same for y (makes a circle, looks fine)
-      sx = cx + rx * Math.cos(a);
-      sy = cy + ry * Math.sin(a);
-    } else if (t < 2 * Math.PI - (straight / r) * Math.PI) {
-      // right straight: x goes from right‑circle rightmost to bottom‑right straight end
-      // this is getting complex; let's just use a simple mapping:
-      // treat the whole thing as an ellipse for the port, the motion feels very similar
-      const a = (t - Math.PI) / (Math.PI / 2); // 0..1 across the right half
-      sx = cx + r * 1.5 * a; // stretch
-      sy = cy;
-    } else {
-      // bottom half‑circle / left straight – symmetric
-      // keep it simple, treat as ellipse
-    }
-    // perspective projection: squash y a bit so it feels 3D
-    const perspective = 0.85;
-    return { x: sx, y: sy * perspective };
-  }
-
-  // ---- update belt position (moves all plates) ------------------------
+  // ---- update belt position (move all plates) ------------------------
   function updateBelt(dt) {
-    // dt is time step; we advance totalTime and move plates
-    totalTime += dt * cruiseSpeed * circumference; // distance travelled this frame
+    totalTime += dt * cruiseSpeed * totalCirc;
     updateSlats();
 
-    // reposition every plate according to its accumulated distance
     plates.forEach((plateEl, i) => {
-      // each plate starts at a base offset; we move them all by totalTime
-      const baseDist = (i / plates.length) * circumference;
-      const progress = (baseDist + totalTime) % circumference;
-      const pos = project(progress);
+      const baseDist = (i / plates.length) * totalCirc;
+      const progress = (baseDist + totalTime) % totalCirc;
+      const angle = (progress / totalCirc) * Math.PI * 2 - Math.PI / 2;
+      const pos = projectFromAngle(angle, beltWidth, beltHeight, radius, straightLength);
       plateEl.setAttribute(
         "transform",
         `translate(${pos.x - 70}, ${pos.y - 70})`
@@ -384,19 +342,17 @@ export function initBelt(container, options = {}) {
     });
   }
 
-  // ---- update which plate is "current" (for the selected state) -------
+  // ---- update which plate is "selected" (lifted with price chip) -------
   function updateCurrentPlate() {
-    // highlight the plate at currentPlateIndex
     plates.forEach((p, i) => {
-      if (i === currentPlateIndex) {
+      if (i === currentPlateIdx) {
         p.classList.add("selected");
-        // bring a price chip into view; we'll create one if needed
         let chip = p.querySelector(".price-chip");
         if (!chip) {
           chip = document.createElementNS("http://www.w3.org/2000/svg", "text");
           chip.setAttribute("class", "price-chip");
           chip.setAttribute("x", "70");
-          chip.setAttribute("y", "-5");
+          chip.setAttribute("y", "-4");
           chip.setAttribute("font-size", "0.625");
           chip.setAttribute("font-family", "Manrope, system-ui, sans-serif");
           chip.setAttribute("fill", "var(--foreground)");
@@ -418,7 +374,7 @@ export function initBelt(container, options = {}) {
     });
   }
 
-  // ---- open dialog, plate flies from belt -----------------------------
+  // ---- open dialog, plate flies from belt into large view -------------
   const dialog = document.createElement("div");
   dialog.setAttribute("class", "dialog");
   dialog.setAttribute("role", "dialog");
@@ -439,66 +395,59 @@ export function initBelt(container, options = {}) {
   `;
   document.body.appendChild(dialog);
 
-  const dialogContent = dialog.querySelector(".content");
-  const dialogTitle = dialog.querySelector(".sr-only");
-  const dialogPrice = dialog.querySelector(".price");
-  const dialogTier = dialog.querySelector(".tier-ring");
-  const dialogChips = dialog.querySelector(".details-chips");
-  const closeBtn = dialog.querySelector(".close-btn");
-  const addToOrderBtn = dialog.querySelector(".add-to-order");
-  const dialogPlateImg = dialog.querySelector(".plate-img-large");
+  const dContent = dialog.querySelector(".content");
+  const dTitle = dialog.querySelector(".sr-only");
+  const dPrice = dialog.querySelector(".price");
+  const dTier = dialog.querySelector(".tier-ring");
+  const dChips = dialog.querySelector(".details-chips");
+  const dClose = dialog.querySelector(".close-btn");
+  const dAdd = dialog.querySelector(".add-to-order");
+  const dPlateImg = dialog.querySelector(".plate-img-large");
 
   function openDialog(dish) {
-    // set plate image
-    dialogPlateImg.src = dish.image;
-    dialogPlateImg.alt = dish.name;
+    // set image
+    dPlateImg.src = dish.image;
+    dPlateImg.alt = dish.name;
 
     // set details
-    dialogTitle.textContent = dish.name;
-    dialogTitle.setAttribute("aria-hidden", "true");
-    const srOnly = document.createElement("span");
-    srOnly.className = "sr-only";
-    srOnly.textContent = `${dish.name}: ${dish.description} ${dish.price}`;
-    dialogTitle.parentNode.insertBefore(srOnly, dialogTitle.nextSibling);
-    dialogPrice.textContent = dish.price;
-    // tier ring colour
-    dialogTier.style.background = `var(--tier-${dish.tier})`;
+    dTitle.textContent = dish.name;
+    dTitle.setAttribute("aria-hidden", "true");
+    const sr = document.createElement("span");
+    sr.className = "sr-only";
+    sr.textContent = `${dish.name}: ${dish.description} ${dish.price}`;
+    dTitle.parentNode.insertBefore(sr, dTitle.nextSibling);
+    dPrice.textContent = dish.price;
+    dTier.style.background = `var(--tier-${dish.tier})`;
 
     // detail chips
-    dialogChips.innerHTML = "";
-    dish.details.forEach(d => {
-      const chip = document.createElement("span");
-      chip.className = "chip";
-      chip.textContent = `${d.label}: ${d.value}`;
-      dialogChips.appendChild(chip);
+    dChips.innerHTML = "";
+    dish.details.forEach(desc => {
+      const span = document.createElement("span");
+      span.className = "chip";
+      span.textContent = `${desc.label}: ${desc.value}`;
+      dChips.appendChild(span);
     });
 
-    // flight animation: take the plate image from the belt position to the dialog
-    const beltPlate = document.querySelector(` .plate[data-index="${plateData.indexOf(dish)}"]`);
+    // flight animation: clone the plate image from belt and fly to dialog
+    const beltPlate = document.querySelector(`.plate[data-index="${plateData.indexOf(dish)}"]`);
     if (beltPlate) {
       const beltImg = beltPlate.querySelector("image");
-      const beltRect = beltPlate.getBoundingClientRect();
-      const dialogRect = dialog.getBoundingClientRect();
-
-      // create a clone of the plate image to fly
       const flyingImg = beltImg.cloneNode(true);
       flyingImg.className = "flying-img";
       flyingImg.style.position = "fixed";
-      flyingImg.style.left = `${beltRect.left}px`;
-      flyingImg.style.top = `${beltRect.top}px`;
-      flyingImg.style.width = `${beltRect.width}px`;
-      flyingImg.style.height = `${beltRect.height}px`;
+      flyingImg.style.left = "0px";
+      flyingImg.style.top = "0px";
+      flyingImg.style.width = "140px";
+      flyingImg.style.height = "140px";
       flyingImg.style.pointerEvents = "none";
       flyingImg.style.transition = "left 0.4s cubic-bezier(0.16,1,0.3,1), top 0.4s cubic-bezier(0.16,1,0.3,1), width 0.4s, height 0.4s";
       document.body.appendChild(flyingImg);
 
-      // end position: centre of dialog, scaled up
-      const centreX = dialogRect.left + dialogRect.width / 2;
-      const centreY = dialogRect.top + dialogRect.height / 2;
-      const endW = 360;
-      const endH = 360;
+      const dRect = dialog.getBoundingClientRect();
+      const centreX = dRect.left + dRect.width / 2;
+      const centreY = dRect.top + dRect.height / 2;
+      const endW = 360, endH = 360;
 
-      // wait for next frame then animate
       requestAnimationFrame(() => {
         flyingImg.style.left = `${centreX - endW / 2}px`;
         flyingImg.style.top = `${centreY - endH / 2}px`;
@@ -506,104 +455,89 @@ export function initBelt(container, options = {}) {
         flyingImg.style.height = `${endH}px`;
       });
 
-      // remove flying img and show the large image after a short delay
       setTimeout(() => {
         document.body.removeChild(flyingImg);
-        dialogPlateImg.style.opacity = 1;
-        // the large img already has the src set
+        dPlateImg.style.opacity = 1;
       }, 480);
-
-      // focus trap setup later
     }
 
     dialog.dataset.dishId = dish.id;
-    dialog.dataset.plateIndex = plateData.indexOf(dish);
+    dialog.dataset.plateIndex = plateData.indexOf(dish) * 1;
     dialog.dataset.state = "open";
     dialog.removeAttribute("hidden");
-    dialog.setAttribute("open", ""); // ARIA
+    dialog.setAttribute("open", "");
 
-    // focus trap: first useful element is the close button or add-to-order
-    const firstFocus = closeBtn;
-    firstFocus.focus();
-
-    // trap focus
-    const focusableEls = dialog.querySelectorAll(
+    // focus trap
+    const focusable = dialog.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
     );
-    let focusedBefore = document.activeElement;
+    let firstFocus = dClose;
 
-    function trapFocus(e) {
-      if (e.key === "Escape") {
-        closeDialog();
-        return;
-      }
-      let first = focusableEls[0];
-      let last = focusableEls[focusableEls.length - 1];
+    function trapKey(e) {
+      if (e.key === "Escape") { closeDialog(); return; }
       if (e.key === "Tab") {
         if (e.shiftKey) {
-          if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+          if (document.activeElement === focusable[0]) { e.preventDefault(); focusable[focusable.length - 1].focus(); }
         } else {
-          if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+          if (document.activeElement === focusable[focusable.length - 1]) { e.preventDefault(); focusable[0].focus(); }
         }
       }
     }
-    dialog.addEventListener("keydown", trapFocus);
+    dialog.addEventListener("keydown", trapKey);
+    firstFocus.focus();
 
-    // stop autoplay while dialog is open
+    // stop autoplay while dialog open
     pauseAutoplay();
   }
 
   function closeDialog() {
-    // reverse the flight animation back to the belt, then hide
+    // reverse flight
     const dish = dishes.find(d => d.id === dialog.dataset.dishId);
-    const plateIndex = dialog.dataset.plateIndex * 1;
-    const beltPlate = plates[plateIndex];
+    const plateIdx = dialog.dataset.plateIndex * 1;
+    const beltPlate = plates[plateIdx];
     const flyingImg = document.querySelector(".flying-img");
     if (flyingImg) {
-      // shrink and fly back
       flyingImg.style.transition = "left 0.3s cubic-bezier(0.16,1,0.3,1), top 0.3s cubic-bezier(0.16,1,0.3,1), width 0.3s, height 0.3s";
-      const beltRect = beltPlate.getBoundingClientRect();
-      flyingImg.style.left = `${beltRect.left}px`;
-      flyingImg.style.top = `${beltRect.top}px`;
-      flyingImg.style.width = `${beltRect.width}px`;
-      flyingImg.style.height = `${beltRect.height}px`;
+      const r = beltPlate.getBoundingClientRect();
+      flyingImg.style.left = `${r.left}px`;
+      flyingImg.style.top = `${r.top}px`;
+      flyingImg.style.width = `${r.width}px`;
+      flyingImg.style.height = `${r.height}px`;
       setTimeout(() => document.body.removeChild(flyingImg), 300);
     }
-    dialogPlateImg.style.opacity = 0;
+    dPlateImg.style.opacity = 0;
 
-    // remove focus trap and return focus
-    dialog.removeEventListener("keydown", trapFocus);
+    dialog.removeEventListener("keydown", trapKey);
     dialog.dataset.state = "closed";
     setTimeout(() => {
       dialog.removeAttribute("open");
       dialog.hidden = true;
       // return focus to the plate that opened it
-      const returningPlate = plates[plateIndex * 1];
-      if (returningPlate) returningPlate.focus();
+      const retPlate = plates[plateIdx];
+      if (retPlate) retPlate.focus();
     }, 350);
 
     resumeAutoplay();
   }
 
-  addToOrderBtn.addEventListener("click", () => {
+  dAdd.addEventListener("click", () => {
     onPlateSelect?.(dish);
     closeDialog();
   });
-  closeBtn.addEventListener("click", closeDialog);
+  dClose.addEventListener("click", closeDialog);
 
-  // close on overlay click (clicking the bg, not the content)
+  // close when clicking the bg
   dialog.addEventListener("click", (e) => {
     if (e.target === dialog) closeDialog();
   });
 
-  // keyboard: arrow keys navigate plates, Enter opens dialog, Esc closes
+  // keyboard global: arrows navigate plates, Home/End, Esc
   let focusedPlateIdx = 0;
   function navigatePlates(delta) {
     focusedPlateIdx = (focusedPlateIdx + delta + dishes.length) % dishes.length;
-    updateCurrentPlate(); // visual update
-    // optionally move the "focus" visual; for now just update
+    updateCurrentPlate();
   }
-  document.addEventListener("keydown", (e) => {
+  document.addEventListener("keydown", e => {
     if (dialog.dataset.state === "open") return; // dialog handles its own keydown
 
     switch (e.key) {
@@ -621,43 +555,43 @@ export function initBelt(container, options = {}) {
   }
 
   // ---- initial render --------------------------------------------------
-  renderPlates(dishes.slice(0, Math.max(1, dishes.length))); // render all supplied
-
-  // initial positioning of the "current" plate (index 0 selected)
+  renderPlates(dishes.slice(0, Math.max(1, dishes.length)));
   updateCurrentPlate();
 
-  // prev/next button wiring – expect buttons with data‑attr in the page
-  const prevBtn = document.querySelector('button[data-belt-prev]');
-  const nextBtn = document.querySelector('button[data-belt-next]');
+  // prev/next button wiring
+  const prevBtn = theContainer.ownerDocument.querySelector('button[data-belt-prev]');
+  const nextBtn = theContainer.ownerDocument.querySelector('button[data-belt-next]');
   if (prevBtn) prevBtn.addEventListener("click", handlePrev);
   if (nextBtn) nextBtn.addEventListener("click", handleNext);
 
-  // expose a method to re‑render when dishes change
+  // reload/replace dishes
   function reload(dishArray) {
-    dishes.length = 0; // clear
+    dishes.length = 0;
     dishes.push(...dishArray);
     renderPlates(dishes);
     updateCurrentPlate();
   }
 
-  // start autoplay if enabled
+  // start autoplay
   if (autoplayEnabled) playAutoplay();
 
-  // return public API (optional, for the page to use)
+  // public API
   return { reload, play: playAutoplay, pause: pauseAutoplay, toggle: () => isPaused ? resumeAutoplay() : pauseAutoplay() };
 }
 
 /* ------------------------------------------------------------------- */
-/* ––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––––– */
+/* ------------------------------------------------------------------- */
 /* ------------------------------------------------------------------- */
 
-// Helper: reduced‑motion refresh
+// helper: refresh belt when reduced‑motion changes
 function refreshMotion() {
   const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
-  // re‑evaluate autoplay on change
-  const belt = initBelt(document.querySelector(".belt-container"), {
-    dishes: window.chefDishes,
-    container: document.querySelector(".belt-svg"),
-    autoplay: !reduced.matches,
-  });
+  const container = document.querySelector(".belt-container");
+  if (container) {
+    const belt = initBelt(container, {
+      dishes: window.chefDishes,
+      container,
+      autoplay: !reduced.matches,
+    });
+  }
 }

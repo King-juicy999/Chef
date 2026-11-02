@@ -1,11 +1,11 @@
 /**
- * /js/cart.js — Cart logic: localStorage, totals, WhatsApp checkout
+ * /js/cart.js Cart logic: localStorage, totals, WhatsApp checkout
  *
  * Keeps cart state in localStorage under the key "chef-cart".
  * Exports functions the page can call:
- *   cart.add(dish)           — add a dish (with quantity 1)
- *   cart.remove(id)          — remove one dish by id
- *   cart.clear()             — empty the cart
+ *   cart.add(dish)           - add a dish (with quantity 1)
+ *   cart.remove(id)          - remove one dish by id
+ *   cart.clear()             - empty the cart
  *   cart.getItems()          → array of { id, name, price, qty }
  *   cart.getTotal()          → total price string (or number of kobo)
  *   cart.openWhatsApp()      → opens wa.me with prefilled message
@@ -14,7 +14,7 @@
  * data returned by these functions.
  */
 
-import { restaurant } from "./config/restaurant.js";
+import { restaurant } from "../config/restaurant.js";
 
 function _load() {
   try {
@@ -94,20 +94,26 @@ const cart = {
   // open a prefilled WhatsApp message (wa.me) with the order details
   openWhatsApp() {
     if (items.length === 0) {
-      alert("Your cart is empty. Add dishes before checking out.");
+      const msg = document.createElement("div");
+      msg.className = "inline-msg err";
+      msg.textContent = "Your cart is empty. Add dishes before checking out.";
+      document.body.prepend(msg);
+      setTimeout(() => msg.remove(), 3000);
       return;
     }
 
     const number = restaurant?.whatsapp || "";
     if (!number) {
-      alert("Restaurant WhatsApp number not configured.");
       return;
     }
+
+    // format whatsapp number to digits only
+    const digitsOnly = number.replace(/\D/g, "");
 
     // build the message text
     const lines = [];
     items.forEach((it) => {
-      lines.push(`${it.name} × ${it.qty} – ${it.price}`);
+      lines.push(`${it.name} × ${it.qty} - ${it.price}`);
     });
     const total = cart.getTotal();
     const message = `
@@ -121,9 +127,7 @@ const cart = {
       Please confirm my order. Thank you!
     `.trim();
 
-    const url = `${number.startsWith("wa.me/") ? number : "wa.me/" + number}?text=${encodeURIComponent(
-      message
-    )}`;
+    const url = `wa.me/${digitsOnly}?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank", "noopener,noreferrer");
     // also allow the page to react (e.g. close drawer)
     return this;
