@@ -1,18 +1,3 @@
-/**
- * /data/menu.js Dishes and legend
- *
- * Each dish has:
- *   id          - short key, matches the image file name (without .webp)
- *   name        - display name
- *   description - one or two sentences
- *   price       - placeholder price in Naira (will be replaced per client)
- *   tier        - 1 to 5, maps to a ring colour in DESIGN.md
- *   image       - relative path to the .webp, normally images/dishes/<id>.webp
- *   details     - array of { label, value } for chips (portion, spice level, allergens)
- *
- * Legend maps tier numbers to human readable labels.
- */
-
 export const legend = [
   { tier: 1, label: "Starter" },
   { tier: 2, label: "Main" },

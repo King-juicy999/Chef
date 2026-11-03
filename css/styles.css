@@ -1,16 +1,3 @@
-/**
- * /css/styles.css Global design tokens and layout
- *
- * This file contains:
- * 1. CSS custom properties (colour tokens, spacing, radius, shadows) from DESIGN.md
- * 2. Base reset and box‑sizing
- * 3. Typographic scale (Fraunces headings, Manrope body)
- * 4. Component styles for header, belt, menu grid, footer, cart, dialog
- * 5. Responsive breakpoints from DESIGN.md
- * 6. Reduced‑motion prefers‑color‑scheme media features
- */
-
-/* ---- colour tokens from DESIGN.md ---- */
 :root {
   --background: #FBF6EE;
   --foreground: #2A1A12;
@@ -29,7 +16,6 @@
   --tier-5: #6B2D5C;
 }
 
-/* dark mode under prefers-color-scheme */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #1D130C;
@@ -49,7 +35,6 @@
   }
 }
 
-/* general page appearance */
 html { scroll-behavior: smooth; }
 body {
   margin: 0;
@@ -60,7 +45,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* typography: Fraunces headings, Manrope body */
 h1, h2, h3, h4, h5, h6 {
   font-family: "Fraunces", Georgia, serif;
   font-weight: 700;
@@ -68,13 +52,10 @@ h1, h2, h3, h4, h5, h6 {
 }
 p { margin: 0 0 1rem; }
 
-/* page container, max width */
 .page { max-width: 1280px; margin: 0 auto; padding: 0 1rem; }
 
-/* focus ring (visible) */
 :focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
 
-/* ---- header ---- */
 header { position: sticky; top: 0; background: var(--card); z-index: 50; }
 .header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 0; }
 .header .name { font-family: "Fraunces", Georgia, serif; font-size: 1.5rem; font-weight: 700; }
@@ -91,7 +72,6 @@ header { position: sticky; top: 0; background: var(--card); z-index: 50; }
   display: flex; align-items: center; justify-content: center;
 }
 
-/* ---- belt section ---- */
 .belt-section { padding: 2rem 0; }
 .section-label {
   display: block; text-transform: uppercase; font-size: 0.625rem; letter-spacing: 0.2em;
@@ -110,20 +90,19 @@ header { position: sticky; top: 0; background: var(--card); z-index: 50; }
 }
 .btn-see-full:hover { background: var(--foreground); color: var(--card); }
 
-/* ---- SVG belt ---- */
 .belt-svg { width: 100%; height: 0; padding-bottom: 42%; position: relative; }
 .belt-svg svg {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
 }
 
-/* the stadium-shaped loop - an oval / stadium path */
+/* the stadium shaped rail path, drawn from JS geometry */
 .belt-path {
   fill: none; stroke: var(--border); stroke-width: 2;
   stroke-dasharray: 0; stroke-dashoffset: 0;
   transform-box: fill-box; transform-origin: 50% 50%;
 }
 
-/* back lane plates are smaller and shaded - drawn by JS with lower opacity */
+/* back lane plates are drawn smaller and shaded by JS */
 .plate {
   position: absolute;
   cursor: pointer;
@@ -147,7 +126,7 @@ header { position: sticky; top: 0; background: var(--card); z-index: 50; }
   opacity: 0; transition: opacity 0.12s, transform 0.12s;
 }
 
-/* slat seams - moving vertical lines */
+/* slat seams, positions updated by JS */
 .slat {
   position: absolute; top: 0; left: 0; bottom: 0; width: 4px;
   background: repeating-linear-gradient(
@@ -156,7 +135,6 @@ header { position: sticky; top: 0; background: var(--card); z-index: 50; }
   pointer-events: none;
 }
 
-/* ---- dialog ---- */
 .dialog { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
   backdrop-filter: blur(4px); align-items: center; justify-content: center; }
 .dialog[open] { display: flex; }
@@ -175,22 +153,28 @@ header { position: sticky; top: 0; background: var(--card); z-index: 50; }
   font-size: 1.25rem; color: var(--muted-foreground); cursor: pointer;
 }
 
-/* overlay click‑to‑close */
 .dialog .bg-overlay { position: absolute; inset: 0; background: transparent; }
 
-/* reduced motion tweaks */
 @media (prefers-reduced-motion: reduce) {
   .plate { transition: none; }
   .dialog .content { animation: none; }
   .belt-path { transition: none; }
 }
 
-/* ---- menu grid (full width below belt) ---- */
 .menu-grid { display: grid; gap: 1.5rem; margin-top: 2rem; }
 @media (min-width: 640px) { .menu-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (min-width: 1024px) { .menu-grid { grid-template-columns: repeat(3, 1fr); } }
 
-/* ---- cart drawer ---- */
+/* inline messages (replaces the old alert flow) */
+.inline-msg {
+  position: fixed; bottom: 1rem; left: 50%; transform: translateX(-50%);
+  background: var(--card); color: var(--foreground);
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 0.5rem 1rem; font-size: 0.875rem;
+  box-shadow: 0 8px 24px rgba(42, 26, 18, 0.08); z-index: 200;
+}
+.inline-msg.err { border-color: var(--ring); }
+
 .cart-drawer { position: fixed; right: 0; top: 0; height: 100vh; width: 320px;
   background: var(--card); box-shadow: -8px 0 24px rgba(0,0,0,0.15); transform: translateX(100%);
   transition: transform 0.3s ease-out; z-index: 100; }
@@ -200,6 +184,13 @@ header { position: sticky; top: 0; background: var(--card); z-index: 50; }
 .cart-drawer .items { padding: 1rem; max-height: 70vh; overflow-y: auto; }
 .cart-drawer .item { display: flex; justify-content: space-between; align-items: baseline; margin: 0.75rem 0; }
 .cart-drawer .item .qty { display: inline-block; min-width: 24px; text-align: center; }
+.cart-drawer .qty-controls { display: inline-flex; align-items: center; gap: 0.5rem; }
+.cart-drawer .qty-btn {
+  width: 1.75rem; height: 1.75rem; padding: 0;
+  border: 1px solid var(--border); background: var(--card); color: var(--foreground);
+  border-radius: 999px; cursor: pointer; font-size: 0.9rem; line-height: 1;
+}
+.cart-drawer .qty-btn:hover { background: var(--muted); }
 .cart-drawer .actions { padding: 1rem; border-top: 1px solid var(--border); display: flex; gap: 1rem; justify-content: flex-end; }
 .cart-drawer .action-btn { background: transparent; border: 1px solid var(--border); padding: 0.25rem 0.5rem; cursor: pointer; }
 .cart-drawer .total { font-family: "Fraunces", Georgia, serif; font-size: 1.25rem; margin-top: 1rem; }
@@ -207,14 +198,12 @@ header { position: sticky; top: 0; background: var(--card); z-index: 50; }
   border: none; border-radius: 999px; font-family: inherit; font-size: 0.875rem; cursor: pointer; margin-top: 1rem; }
 .cart-drawer .checkout:hover { background: #E46A33; }
 
-/* mobile stacked hero */
 @media (max-width: 1023px) {
   .hero { flex-direction: column-reverse; text-align: center; }
   .hero .belt-area { order: 2; width: 100%; }
   .hero .text-area { order: 1; width: 100%; }
 }
 
-/* two‑column hero from 1024px up */
 @media (min-width: 1024px) {
   .hero { flex-direction: row; align-items: start; }
   .hero .text-area { width: 45%; padding-right: 2rem; }
