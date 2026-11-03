@@ -1,9 +1,3 @@
-/**
- * Conveyor belt component ported faithfully from reference/sushi-conveyor-menu.tsx
- * All geometry, tick physics, interaction formulas and constants match the reference.
- */
-
-// --- Constants (verbatim from reference/sushi-conveyor-menu.tsx) ---
 const SPACING = 1.35;
 const CURVE = 0.95;
 const BAND = 1.22;
@@ -26,19 +20,12 @@ const DEFAULT_LABELS = {
   pause: "Pause belt",
 };
 const TIERS = [
-  { ring: "border-chart-1", dot: "bg-chart-1" },
-  { ring: "border-chart-2", dot: "bg-chart-2" },
-  { ring: "border-chart-3", dot: "bg-chart-3" },
-  { ring: "border-chart-4", dot: "bg-chart-4" },
-  { ring: "border-chart-5", dot: "bg-chart-5" },
+  { ring: "belt-ring-1", dot: "belt-dot-1" },
+  { ring: "belt-ring-2", dot: "belt-dot-2" },
+  { ring: "belt-ring-3", dot: "belt-dot-3" },
+  { ring: "belt-ring-4", dot: "belt-dot-4" },
+  { ring: "belt-ring-5", dot: "belt-dot-5" },
 ];
-const THEME =
-  "[--belt:color-mix(in_oklab,var(--color-foreground)_78%,var(--color-background))] dark:[--belt:color-mix(in_oklab,var(--color-foreground)_16%,var(--color-background))] " +
-  "[--belt-side:color-mix(in_oklab,var(--color-foreground)_92%,var(--color-background))] dark:[--belt-side:color-mix(in_oklab,var(--color-foreground)_7%,var(--color-background))] " +
-  "[--rail:color-mix(in_oklab,var(--color-muted-foreground)_45%,white)] dark:[--rail:color-mix(in_oklab,var(--color-muted-foreground)_72%,var(--color-background))] " +
-  "[--island:color-mix(in_oklab,var(--color-muted-foreground)_16%,var(--color-background))] dark:[--island:color-mix(in_oklab,var(--color-foreground)_13%,var(--color-background))] " +
-  "[--island-low:color-mix(in_oklab,var(--color-muted-foreground)_27%,var(--color-background))] dark:[--island-low:color-mix(in_oklab,var(--color-foreground)_8%,var(--color-background))] " +
-  "[--island-wall:color-mix(in_oklab,var(--color-muted-foreground)_42%,var(--color-background))] dark:[--island-wall:color-mix(in_oklab,var(--color-foreground)_5%,var(--color-background))]";
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
@@ -75,7 +62,7 @@ function makeSim() {
   };
 }
 
-/** Position on the stadium loop. u is arc length on the belt. */
+// Position on the stadium loop. u is arc length on the belt.
 function along(g, u) {
   const { s, r } = g;
   let t = ((u % g.l) + g.l) % g.l;
@@ -97,7 +84,6 @@ function along(g, u) {
   return { x: s / 2 + r * sin, z: -r * cos, nx: sin, nz: -cos, tx: cos, tz: sin };
 }
 
-/** Perspective projection matching reference. */
 function project(g, x, z) {
   const k = g.a + g.b * z;
   return { x: g.cx + x * k, y: g.ym + TILT * (g.a * z + (g.b * z * z) / 2), k };
@@ -204,10 +190,6 @@ function pad(value) {
   return String(value).padStart(2, "0");
 }
 
-/**
- * hitTest faithfully calculates bounding elliptical collision on projected plates.
- * Matches line 355 in reference/sushi-conveyor-menu.tsx
- */
 function hitTest(live, sim, px, py) {
   const g = live.geo;
   const s = sim;
@@ -232,10 +214,6 @@ function hitTest(live, sim, px, py) {
   return best;
 }
 
-/**
- * tick physics loop faithfully updating velocity, spring lifts, sub-steps and slat rendering.
- * Matches line 379 in reference/sushi-conveyor-menu.tsx
- */
 function tick(sim, live, pointer, paintAll, hover, now) {
   const s = sim;
   const L = live;
@@ -312,12 +290,8 @@ function tick(sim, live, pointer, paintAll, hover, now) {
   }
 }
 
-/**
- * DishDialog faithfully renders the modal dialog and runs the plate flight animation.
- * Matches line 941 in reference/sushi-conveyor-menu.tsx
- */
 function DishDialog({ uid, item, index, total, labels, reduced, broken, source, onLift, onAdd, onClose }) {
-  const tier = tierStyle(item.tier);
+  const tierNum = clamp(Math.round(item.tier ?? 1), 1, 5);
   const titleId = `${uid}-dish-title`;
   let closing = false;
   let added = false;
@@ -329,71 +303,86 @@ function DishDialog({ uid, item, index, total, labels, reduced, broken, source, 
   overlay.setAttribute("aria-modal", "true");
   overlay.setAttribute("aria-labelledby", titleId);
   overlay.setAttribute("data-dish-dialog", "");
-  overlay.className = "sushi-dialog fixed inset-0 z-50 flex items-center justify-center overflow-y-auto p-4 text-foreground sm:p-8";
+  overlay.className = "dialog-overlay";
 
   const backdrop = document.createElement("div");
   backdrop.setAttribute("aria-hidden", "true");
-  backdrop.className = "sushi-dialog-backdrop absolute inset-0 bg-background/80 backdrop-blur-md transition-opacity duration-300";
+  backdrop.className = "dialog-backdrop";
   backdrop.style.opacity = "0";
 
   const card = document.createElement("div");
-  card.className = "sushi-dialog-card relative grid w-full max-w-[52rem] items-center gap-6 p-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,19rem)] sm:gap-10 sm:p-8";
+  card.className = "dialog-card";
 
   const cardBg = document.createElement("div");
   cardBg.setAttribute("aria-hidden", "true");
-  cardBg.className = "sushi-dialog-card-bg absolute inset-0 rounded-[2rem] border border-border bg-card shadow-2xl transition-[opacity,scale] duration-300";
+  cardBg.className = "dialog-card-bg";
   cardBg.style.opacity = "0";
   cardBg.style.transform = "scale(0.97)";
 
   const closeBtn = document.createElement("button");
   closeBtn.type = "button";
-  closeBtn.className = "sushi-dialog-close absolute right-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-muted-foreground outline-none transition-[opacity,color] duration-300 hover:text-foreground";
+  closeBtn.className = "dialog-close";
   closeBtn.style.opacity = "0";
-  closeBtn.innerHTML = `${labels.close} <svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9" /></svg>`;
+  closeBtn.appendChild(document.createTextNode(labels.close + " "));
+  const closeSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  closeSvg.setAttribute("aria-hidden", "true");
+  closeSvg.setAttribute("viewBox", "0 0 16 16");
+  closeSvg.setAttribute("width", "14");
+  closeSvg.setAttribute("height", "14");
+  closeSvg.setAttribute("fill", "none");
+  closeSvg.setAttribute("stroke", "currentColor");
+  closeSvg.setAttribute("stroke-width", "1.6");
+  closeSvg.setAttribute("stroke-linecap", "round");
+  closeSvg.innerHTML = '<path d="M3.5 3.5l9 9M12.5 3.5l-9 9" />';
+  closeBtn.appendChild(closeSvg);
 
   const figure = document.createElement("div");
   figure.setAttribute("data-dish-figure", "");
-  figure.className = "sushi-dialog-figure relative mx-auto aspect-square w-full max-w-[min(42vh,22rem)]";
+  figure.className = "dialog-figure";
 
   const figShadow = document.createElement("span");
   figShadow.setAttribute("aria-hidden", "true");
-  figShadow.className = "absolute inset-x-[8%] bottom-[-4%] top-[14%] rounded-full bg-black opacity-25 blur-2xl";
-
+  figShadow.className = "dialog-figure-shadow";
   figure.appendChild(figShadow);
 
   if (broken) {
     const ph = document.createElement("span");
     ph.setAttribute("aria-hidden", "true");
-    ph.className = "absolute inset-[3%] rounded-full border border-border bg-muted flex items-center justify-center";
-    ph.innerHTML = '<span class="size-[40%] rounded-full bg-muted-foreground/25"></span>';
+    ph.className = "dialog-figure-placeholder";
+    const phInner = document.createElement("span");
+    phInner.className = "dialog-figure-placeholder-inner";
+    ph.appendChild(phInner);
     figure.appendChild(ph);
   } else {
     const img = document.createElement("img");
     img.src = item.image;
     img.alt = item.name;
     img.draggable = false;
-    img.className = "relative size-full select-none object-contain";
+    img.className = "dialog-figure-img";
     figure.appendChild(img);
   }
 
   const figRing = document.createElement("span");
   figRing.setAttribute("aria-hidden", "true");
-  figRing.className = `absolute -inset-[1.5%] rounded-full border-[3px] ${tier.ring}`;
-  figRing.style.borderColor = `var(--tier-${item.tier ?? 1}, currentColor)`;
+  figRing.className = `dialog-figure-ring dialog-ring-${tierNum}`;
   figure.appendChild(figRing);
 
   const contentCol = document.createElement("div");
-  contentCol.className = "relative flex flex-col gap-3 text-center transition-[opacity,translate] delay-150 duration-500 sm:text-left";
+  contentCol.className = "dialog-body";
   contentCol.style.opacity = "0";
   contentCol.style.transform = "translateY(8px)";
 
   const counterP = document.createElement("p");
-  counterP.className = "flex items-center justify-center gap-2 font-mono text-[11px] tracking-[0.2em] text-muted-foreground sm:justify-start";
-  counterP.innerHTML = `<span aria-hidden="true" class="size-2 rounded-full ${tier.dot}" style="background-color:var(--tier-${item.tier ?? 1}, currentColor)"></span>${pad(index + 1)} / ${pad(total)}`;
+  counterP.className = "dialog-counter";
+  const counterDot = document.createElement("span");
+  counterDot.setAttribute("aria-hidden", "true");
+  counterDot.className = `dialog-dot dialog-dot-${tierNum}`;
+  counterP.appendChild(counterDot);
+  counterP.appendChild(document.createTextNode(`${pad(index + 1)} / ${pad(total)}`));
 
   const titleH3 = document.createElement("h3");
   titleH3.id = titleId;
-  titleH3.className = "text-2xl font-medium tracking-tight sm:text-3xl";
+  titleH3.className = "dialog-title";
   titleH3.textContent = item.name;
 
   contentCol.appendChild(counterP);
@@ -401,17 +390,17 @@ function DishDialog({ uid, item, index, total, labels, reduced, broken, source, 
 
   if (item.description) {
     const descP = document.createElement("p");
-    descP.className = "text-sm leading-relaxed text-muted-foreground";
+    descP.className = "dialog-desc";
     descP.textContent = item.description;
     contentCol.appendChild(descP);
   }
 
   if (item.details && item.details.length > 0) {
     const detailsUl = document.createElement("ul");
-    detailsUl.className = "flex flex-wrap justify-center gap-2 sm:justify-start";
+    detailsUl.className = "dialog-chips";
     item.details.forEach((d) => {
       const li = document.createElement("li");
-      li.className = "rounded-full border border-border px-3 py-1 text-xs text-muted-foreground";
+      li.className = "dialog-chip";
       li.textContent = typeof d === "string" ? d : (d.label ? `${d.label}: ${d.value}` : d.value);
       detailsUl.appendChild(li);
     });
@@ -419,17 +408,29 @@ function DishDialog({ uid, item, index, total, labels, reduced, broken, source, 
   }
 
   const actionsDiv = document.createElement("div");
-  actionsDiv.className = "mt-2 flex flex-wrap items-center justify-center gap-4 sm:justify-start";
+  actionsDiv.className = "dialog-actions";
 
   const priceP = document.createElement("p");
-  priceP.className = "text-2xl font-semibold tabular-nums tracking-tight";
+  priceP.className = "dialog-price";
   priceP.textContent = item.price;
 
   const addBtn = document.createElement("button");
   addBtn.type = "button";
   addBtn.setAttribute("data-add", "");
-  addBtn.className = "inline-flex items-center gap-2 rounded-full bg-foreground px-5 py-2.5 text-sm font-medium text-background shadow-sm outline-none transition-[translate,box-shadow] hover:-translate-y-px hover:shadow-md";
-  addBtn.innerHTML = `<svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M8 3.5v9M3.5 8h9" /></svg> ${labels.add}`;
+  addBtn.className = "dialog-add-btn";
+  const addSvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  addSvg.setAttribute("aria-hidden", "true");
+  addSvg.setAttribute("viewBox", "0 0 16 16");
+  addSvg.setAttribute("width", "16");
+  addSvg.setAttribute("height", "16");
+  addSvg.setAttribute("fill", "none");
+  addSvg.setAttribute("stroke", "currentColor");
+  addSvg.setAttribute("stroke-width", "1.8");
+  addSvg.setAttribute("stroke-linecap", "round");
+  addSvg.innerHTML = '<path d="M8 3.5v9M3.5 8h9" />';
+  addBtn.appendChild(addSvg);
+  const addTextNode = document.createTextNode(" " + labels.add);
+  addBtn.appendChild(addTextNode);
 
   actionsDiv.appendChild(priceP);
   actionsDiv.appendChild(addBtn);
@@ -519,7 +520,8 @@ function DishDialog({ uid, item, index, total, labels, reduced, broken, source, 
     if (added || closing) return;
     added = true;
     onAdd();
-    addBtn.innerHTML = '<svg aria-hidden="true" viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 8.5l3 3 6-7" /></svg> ' + labels.add;
+    addSvg.innerHTML = '<path d="M3.5 8.5l3 3 6-7" />';
+    addSvg.setAttribute("stroke-width", "1.9");
     timer = window.setTimeout(dismiss, reduced ? 0 : 450);
   }
 
@@ -550,135 +552,11 @@ function DishDialog({ uid, item, index, total, labels, reduced, broken, source, 
   return { dismiss };
 }
 
-/**
- * Injects required stylesheet rules for conveyor theme, counter, slats, and modal dialog.
- */
-function injectStylesOnce() {
-  if (document.getElementById("chef-belt-component-styles")) return;
-  const style = document.createElement("style");
-  style.id = "chef-belt-component-styles";
-  style.textContent = `
-    [data-slot="sushi-conveyor-menu"] {
-      --belt: color-mix(in oklab, var(--foreground, #2A1A12) 78%, var(--background, #FBF6EE));
-      --belt-side: color-mix(in oklab, var(--foreground, #2A1A12) 92%, var(--background, #FBF6EE));
-      --rail: color-mix(in oklab, var(--muted-foreground, #7A6657) 45%, white);
-      --island: color-mix(in oklab, var(--muted-foreground, #7A6657) 16%, var(--background, #FBF6EE));
-      --island-low: color-mix(in oklab, var(--muted-foreground, #7A6657) 27%, var(--background, #FBF6EE));
-      --island-wall: color-mix(in oklab, var(--muted-foreground, #7A6657) 42%, var(--background, #FBF6EE));
-      position: relative;
-      isolation: isolate;
-      width: 100%;
-      overflow: hidden;
-    }
-    @media (prefers-color-scheme: dark) {
-      [data-slot="sushi-conveyor-menu"] {
-        --belt: color-mix(in oklab, var(--foreground, #F5EBDD) 16%, var(--background, #1D130C));
-        --belt-side: color-mix(in oklab, var(--foreground, #F5EBDD) 7%, var(--background, #1D130C));
-        --rail: color-mix(in oklab, var(--muted-foreground, #B8A292) 72%, var(--background, #1D130C));
-        --island: color-mix(in oklab, var(--foreground, #F5EBDD) 13%, var(--background, #1D130C));
-        --island-low: color-mix(in oklab, var(--foreground, #F5EBDD) 8%, var(--background, #1D130C));
-        --island-wall: color-mix(in oklab, var(--foreground, #F5EBDD) 5%, var(--background, #1D130C));
-      }
-    }
-    .sushi-control-btn {
-      display: inline-flex;
-      width: 2rem;
-      height: 2rem;
-      align-items: center;
-      justify-content: center;
-      border-radius: 9999px;
-      border: 1px solid var(--border, #E6D8C4);
-      background: var(--card, #FFFFFF);
-      color: var(--muted-foreground, #7A6657);
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-      outline: none;
-      cursor: pointer;
-      transition: color 0.15s;
-    }
-    .sushi-control-btn:hover {
-      color: var(--foreground, #2A1A12);
-    }
-    .sushi-control-btn:focus-visible {
-      outline: 2px solid var(--ring, #C2410C);
-      outline-offset: 2px;
-    }
-    .sushi-dialog {
-      position: fixed;
-      inset: 0;
-      z-index: 1000;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-    }
-    .sushi-dialog-backdrop {
-      position: absolute;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(8px);
-      -webkit-backdrop-filter: blur(8px);
-      transition: opacity 300ms cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .sushi-dialog-card {
-      position: relative;
-      width: 100%;
-      max-width: 52rem;
-      display: grid;
-      gap: 1.5rem;
-      padding: 1.5rem;
-      z-index: 10;
-    }
-    @media (min-width: 640px) {
-      .sushi-dialog-card {
-        grid-template-columns: minmax(0, 1fr) minmax(0, 19rem);
-        gap: 2.5rem;
-        padding: 2rem;
-      }
-    }
-    .sushi-dialog-card-bg {
-      position: absolute;
-      inset: 0;
-      border-radius: 2rem;
-      border: 1px solid var(--border, #E6D8C4);
-      background: var(--card, #FFFFFF);
-      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-      transition: opacity 300ms, transform 300ms;
-    }
-    .sushi-dialog-close {
-      position: absolute;
-      right: 1rem;
-      top: 1rem;
-      z-index: 20;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      border-radius: 9999px;
-      border: none;
-      background: transparent;
-      padding: 0.375rem 0.75rem;
-      font-size: 0.75rem;
-      font-weight: 500;
-      color: var(--muted-foreground, #7A6657);
-      cursor: pointer;
-    }
-    .sushi-dialog-close:hover {
-      color: var(--foreground, #2A1A12);
-    }
-  `;
-  document.head.appendChild(style);
-}
-
-/**
- * Vanilla JavaScript port of SushiConveyorMenu.
- * Mounts the faithful conveyor belt into container.
- */
-export function initBelt(container, options = {}) {
+function initBelt(container, options = {}) {
   if (!container) {
     console.error("belt: container is required");
     return;
   }
-
-  injectStylesOnce();
 
   const items = options.items || options.dishes || [];
   const count = items.length;
@@ -743,18 +621,17 @@ export function initBelt(container, options = {}) {
     onAdd: onPlateSelect,
   };
 
-  container.innerHTML = "";
+  while (container.firstChild) container.removeChild(container.firstChild);
 
   const section = document.createElement("section");
   section.setAttribute("data-slot", "sushi-conveyor-menu");
   section.setAttribute("data-layout", wide ? "wide" : "stack");
   section.setAttribute("data-center", "0");
-  section.className = `relative isolate w-full overflow-hidden ${THEME}`;
+  section.className = "belt-wrapper";
 
   const radial = document.createElement("div");
   radial.setAttribute("aria-hidden", "true");
-  radial.className = "pointer-events-none absolute inset-0 -z-10";
-  radial.style.background = "radial-gradient(64% 52% at 50% 56%, color-mix(in oklab, var(--foreground, #2A1A12) 5%, transparent), transparent 72%)";
+  radial.className = "belt-glow";
   section.appendChild(radial);
 
   const stage = document.createElement("div");
@@ -762,24 +639,23 @@ export function initBelt(container, options = {}) {
   stage.setAttribute("role", "group");
   stage.setAttribute("aria-label", options.heading || "Sushi conveyor belt");
   stage.setAttribute("aria-roledescription", "conveyor belt");
-  stage.className = "relative w-full touch-pan-y select-none";
+  stage.className = "belt-stage";
   stage.style.height = `${geo ? geo.height : 260}px`;
-  stage.style.overflowX = "clip";
 
   const counterDiv = document.createElement("div");
   counterDiv.setAttribute("aria-hidden", "true");
   counterDiv.setAttribute("data-counter", "");
-  counterDiv.className = "pointer-events-none absolute inset-x-0";
+  counterDiv.className = "belt-counter";
   stage.appendChild(counterDiv);
 
   const beltDiv = document.createElement("div");
   beltDiv.setAttribute("data-belt", "");
   beltDiv.setAttribute("aria-hidden", "true");
-  beltDiv.className = "pointer-events-none absolute inset-0";
+  beltDiv.className = "belt-track";
 
   const svgNS = "http://www.w3.org/2000/svg";
   const svg = document.createElementNS(svgNS, "svg");
-  svg.setAttribute("class", "absolute left-0 top-0 overflow-visible");
+  svg.setAttribute("class", "belt-svg-track");
   svg.setAttribute("focusable", "false");
 
   const defs = document.createElementNS(svgNS, "defs");
@@ -796,7 +672,7 @@ export function initBelt(container, options = {}) {
 
   const shadowPath = document.createElementNS(svgNS, "path");
   shadowPath.setAttribute("fill", "black");
-  shadowPath.setAttribute("class", "opacity-[0.18]");
+  shadowPath.setAttribute("class", "belt-track-shadow");
   shadowPath.setAttribute("filter", `url(#${uid}-soft)`);
   svg.appendChild(shadowPath);
 
@@ -885,27 +761,28 @@ export function initBelt(container, options = {}) {
     button.setAttribute("aria-label", `${item.name}, ${item.price}`);
     button.setAttribute("aria-describedby", `${uid}-caption`);
     button.setAttribute("aria-haspopup", "dialog");
-    button.className = "absolute left-0 top-0 cursor-pointer rounded-[50%] outline-none";
-    button.style.position = "absolute";
+    button.className = "belt-plate";
 
     const shadowOuter = document.createElement("span");
     shadowOuter.setAttribute("aria-hidden", "true");
-    shadowOuter.className = "pointer-events-none absolute inset-0 opacity-50";
+    shadowOuter.className = "belt-plate-shadow";
 
     const shadowInner = document.createElement("span");
-    shadowInner.className = "absolute inset-x-[5%] bottom-[-9%] top-[16%] rounded-[50%] bg-black";
+    shadowInner.className = "belt-plate-shadow-blur";
     shadowOuter.appendChild(shadowInner);
     shadows.push(shadowInner);
 
     const liftSpan = document.createElement("span");
     liftSpan.setAttribute("data-lift", "");
-    liftSpan.className = "absolute inset-0";
+    liftSpan.className = "belt-plate-lift";
 
     const placeholder = document.createElement("span");
     placeholder.setAttribute("aria-hidden", "true");
     placeholder.setAttribute("data-placeholder", "");
-    placeholder.className = `absolute rounded-[50%] border border-border bg-card ${broken ? "inset-[3%] shadow-sm" : "inset-[6%]"}`;
-    placeholder.innerHTML = '<span class="absolute inset-[30%] rounded-[50%] bg-muted-foreground/20"></span>';
+    placeholder.className = broken ? "belt-plate-placeholder broken" : "belt-plate-placeholder";
+    const phInner = document.createElement("span");
+    phInner.className = "belt-plate-placeholder-inner";
+    placeholder.appendChild(phInner);
     liftSpan.appendChild(placeholder);
 
     if (!broken) {
@@ -913,7 +790,7 @@ export function initBelt(container, options = {}) {
       img.src = item.image;
       img.alt = "";
       img.draggable = false;
-      img.className = "pointer-events-none absolute inset-0 size-full select-none object-fill";
+      img.className = "belt-plate-img";
       img.onerror = () => {
         failed[item.id] = true;
         img.remove();
@@ -922,7 +799,7 @@ export function initBelt(container, options = {}) {
 
       const shade = document.createElement("span");
       shade.setAttribute("aria-hidden", "true");
-      shade.className = "pointer-events-none absolute inset-0 bg-black";
+      shade.className = "belt-plate-shade";
       shade.style.opacity = "0";
       shade.style.webkitMask = mask;
       shade.style.mask = mask;
@@ -935,20 +812,26 @@ export function initBelt(container, options = {}) {
     const ring = document.createElement("span");
     ring.setAttribute("aria-hidden", "true");
     ring.setAttribute("data-ring", "");
-    ring.className = `pointer-events-none absolute -inset-[2%] rounded-[50%] border-2 ${tier.ring}`;
-    ring.style.borderColor = `var(--tier-${item.tier ?? 1}, currentColor)`;
+    ring.className = `belt-ring ${tier.ring}`;
     liftSpan.appendChild(ring);
 
     const anchor = document.createElement("span");
     anchor.setAttribute("aria-hidden", "true");
-    anchor.className = "pointer-events-none absolute left-1/2 top-0 size-0";
+    anchor.className = "belt-anchor";
 
     const chip = document.createElement("span");
     chip.setAttribute("data-chip", "");
-    chip.className = "absolute bottom-[7px] left-0 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full border border-border bg-card py-1 pl-2 pr-2.5 text-[11px] font-medium leading-none text-card-foreground shadow-[0_6px_16px_-6px_rgba(0,0,0,0.3)] transition-[opacity,translate] duration-300";
-    chip.style.opacity = "0";
-    chip.style.transform = "translateY(4px) translateX(-50%)";
-    chip.innerHTML = `<span class="size-1.5 rounded-full ${tier.dot}" style="background-color:var(--tier-${item.tier ?? 1}, currentColor)"></span>${item.name} <span class="tabular-nums text-muted-foreground">${item.price}</span>`;
+    chip.className = "belt-chip";
+
+    const chipDot = document.createElement("span");
+    chipDot.className = `belt-dot ${tier.dot}`;
+    chip.appendChild(chipDot);
+    chip.appendChild(document.createTextNode(item.name + " "));
+
+    const priceSpan = document.createElement("span");
+    priceSpan.className = "belt-chip-price";
+    priceSpan.textContent = item.price;
+    chip.appendChild(priceSpan);
 
     anchor.appendChild(chip);
     liftSpan.appendChild(anchor);
@@ -964,27 +847,45 @@ export function initBelt(container, options = {}) {
   }
 
   const controlsDiv = document.createElement("div");
-  controlsDiv.className = "relative z-10 mt-3 flex items-center justify-center gap-1.5";
-  controlsDiv.innerHTML = `
-    <button type="button" data-control="previous" aria-label="${labels.previous}" class="sushi-control-btn">
-      <svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5" /></svg>
-    </button>
-    <button type="button" data-control="pause" aria-label="${labels.pause}" aria-pressed="${paused}" class="sushi-control-btn">
-      ${paused
-        ? '<svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M5 3.4v9.2a.6.6 0 0 0 .9.5l7.4-4.6a.6.6 0 0 0 0-1L5.9 2.9a.6.6 0 0 0-.9.5Z" /></svg>'
-        : '<svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><rect x="4" y="3" width="2.6" height="10" rx="0.8" /><rect x="9.4" y="3" width="2.6" height="10" rx="0.8" /></svg>'}
-    </button>
-    <button type="button" data-control="next" aria-label="${labels.next}" class="sushi-control-btn">
-      <svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5" /></svg>
-    </button>
-  `;
+  controlsDiv.className = "belt-controls";
+
+  const prevBtn = document.createElement("button");
+  prevBtn.type = "button";
+  prevBtn.setAttribute("data-control", "previous");
+  prevBtn.setAttribute("aria-label", labels.previous);
+  prevBtn.className = "belt-control";
+  prevBtn.innerHTML = '<svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3.5 5.5 8l4.5 4.5" /></svg>';
+
+  const pauseBtn = document.createElement("button");
+  pauseBtn.type = "button";
+  pauseBtn.setAttribute("data-control", "pause");
+  pauseBtn.setAttribute("aria-label", labels.pause);
+  pauseBtn.setAttribute("aria-pressed", String(paused));
+  pauseBtn.className = "belt-control";
+  pauseBtn.innerHTML = paused
+    ? '<svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M5 3.4v9.2a.6.6 0 0 0 .9.5l7.4-4.6a.6.6 0 0 0 0-1L5.9 2.9a.6.6 0 0 0-.9.5Z" /></svg>'
+    : '<svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><rect x="4" y="3" width="2.6" height="10" rx="0.8" /><rect x="9.4" y="3" width="2.6" height="10" rx="0.8" /></svg>';
+
+  const nextBtn = document.createElement("button");
+  nextBtn.type = "button";
+  nextBtn.setAttribute("data-control", "next");
+  nextBtn.setAttribute("aria-label", labels.next);
+  nextBtn.className = "belt-control";
+  nextBtn.innerHTML = '<svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5 10.5 8 6 12.5" /></svg>';
+
+  controlsDiv.appendChild(prevBtn);
+  controlsDiv.appendChild(pauseBtn);
+  controlsDiv.appendChild(nextBtn);
 
   const captionNode = document.createElement("div");
   captionNode.id = `${uid}-caption`;
   captionNode.setAttribute("aria-live", "polite");
   captionNode.setAttribute("data-caption", "");
-  captionNode.className = "mx-auto mt-2 max-w-md px-2 text-center min-h-[2.75rem]";
-  captionNode.innerHTML = `<p class="text-sm text-muted-foreground">${options.caption || ""}</p>`;
+  captionNode.className = "belt-caption";
+  const initialCap = document.createElement("p");
+  initialCap.className = "belt-caption-desc";
+  initialCap.textContent = options.caption || "";
+  captionNode.appendChild(initialCap);
 
   section.appendChild(stage);
   if (count > 1) section.appendChild(controlsDiv);
@@ -1084,8 +985,7 @@ export function initBelt(container, options = {}) {
     const chip = chips[i];
     if (chip) {
       const isAct = live.active === i && lifted !== i;
-      chip.style.opacity = isAct ? "1" : "0";
-      chip.style.transform = isAct ? "translateY(0) translateX(-50%)" : "translateY(4px) translateX(-50%)";
+      chip.classList.toggle("active", isAct);
     }
 
     button.style.visibility = lifted === i ? "hidden" : "";
@@ -1119,13 +1019,36 @@ export function initBelt(container, options = {}) {
   function updateCaption() {
     const cur = live.active !== null ? items[live.active] : null;
     const globalCaption = document.querySelector(".section-caption");
+    while (captionNode.firstChild) captionNode.removeChild(captionNode.firstChild);
+
     if (cur) {
-      const html = `<p class="text-sm font-medium text-foreground">${cur.name} <span class="font-normal tabular-nums text-muted-foreground">· ${cur.price}</span></p>${cur.description ? `<p class="mt-0.5 text-[13px] leading-snug text-muted-foreground">${cur.description}</p>` : ""}`;
-      captionNode.innerHTML = html;
-      if (globalCaption) globalCaption.innerHTML = `${cur.name} (${cur.price}) — ${cur.description || ""}`;
+      const pTitle = document.createElement("p");
+      pTitle.className = "belt-caption-title";
+      pTitle.textContent = cur.name + " ";
+      const priceSpan = document.createElement("span");
+      priceSpan.className = "belt-caption-price";
+      priceSpan.textContent = "· " + cur.price;
+      pTitle.appendChild(priceSpan);
+      captionNode.appendChild(pTitle);
+
+      if (cur.description) {
+        const pDesc = document.createElement("p");
+        pDesc.className = "belt-caption-desc";
+        pDesc.textContent = cur.description;
+        captionNode.appendChild(pDesc);
+      }
+
+      if (globalCaption) {
+        globalCaption.textContent = cur.description
+          ? `${cur.name} (${cur.price}): ${cur.description}`
+          : `${cur.name} (${cur.price})`;
+      }
     } else {
+      const pDef = document.createElement("p");
+      pDef.className = "belt-caption-desc";
       const def = options.caption || "Hover to stop the belt, flick to spin it, pick a plate to order.";
-      captionNode.innerHTML = `<p class="text-sm text-muted-foreground">${def}</p>`;
+      pDef.textContent = def;
+      captionNode.appendChild(pDef);
       if (globalCaption) globalCaption.textContent = def;
     }
   }
@@ -1258,10 +1181,10 @@ export function initBelt(container, options = {}) {
     live.paused = next;
     paused = next;
     section.toggleAttribute("data-paused", next);
-    const pauseBtn = controlsDiv.querySelector('[data-control="pause"]');
-    if (pauseBtn) {
-      pauseBtn.setAttribute("aria-pressed", String(next));
-      pauseBtn.innerHTML = next
+    const pBtn = controlsDiv.querySelector('[data-control="pause"]');
+    if (pBtn) {
+      pBtn.setAttribute("aria-pressed", String(next));
+      pBtn.innerHTML = next
         ? '<svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M5 3.4v9.2a.6.6 0 0 0 .9.5l7.4-4.6a.6.6 0 0 0 0-1L5.9 2.9a.6.6 0 0 0-.9.5Z" /></svg>'
         : '<svg aria-hidden="true" viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><rect x="4" y="3" width="2.6" height="10" rx="0.8" /><rect x="9.4" y="3" width="2.6" height="10" rx="0.8" /></svg>';
     }
@@ -1418,9 +1341,9 @@ export function initBelt(container, options = {}) {
     });
   }
 
-  controlsDiv.querySelector('[data-control="previous"]')?.addEventListener("click", () => go((live.active ?? sim.center) - 1, false));
-  controlsDiv.querySelector('[data-control="pause"]')?.addEventListener("click", togglePause);
-  controlsDiv.querySelector('[data-control="next"]')?.addEventListener("click", () => go((live.active ?? sim.center) + 1, false));
+  prevBtn.addEventListener("click", () => go((live.active ?? sim.center) - 1, false));
+  pauseBtn.addEventListener("click", togglePause);
+  nextBtn.addEventListener("click", () => go((live.active ?? sim.center) + 1, false));
 
   function resize() {
     const sectionWidth = Math.round(container.clientWidth || window.innerWidth);
@@ -1503,6 +1426,7 @@ export function initBelt(container, options = {}) {
   resize();
 
   return {
+    open,
     reload: (newItems) => {
       initBelt(container, { ...options, items: newItems, dishes: newItems });
     },
@@ -1523,9 +1447,21 @@ export function initBelt(container, options = {}) {
       resizeObserver.disconnect();
       intersectionObserver.disconnect();
       document.removeEventListener("visibilitychange", updateInView);
-      container.innerHTML = "";
+      container.textContent = "";
     },
   };
 }
+
+export {
+  initBelt,
+  makeGeo,
+  along,
+  project,
+  halfSpan,
+  edgePath,
+  slatPath,
+  pose,
+  centerOf,
+};
 
 export default initBelt;

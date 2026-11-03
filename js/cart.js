@@ -101,13 +101,13 @@ const cart = {
       "Please confirm my order. Thank you!",
     ].join("\n");
 
-    window.open(`wa.me/${digitsOnly}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
+    window.open(`https://wa.me/${digitsOnly}?text=${encodeURIComponent(message)}`, "_blank", "noopener,noreferrer");
     return this;
   },
 };
 
 export function formatWhatsAppNumber(number) {
-  return number.replace(/\D/g, "");
+  return String(number || "").replace(/\D/g, "");
 }
 
 export { cart };

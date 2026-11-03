@@ -1,5 +1,5 @@
 import { initBelt } from "./belt.js";
-import { cart, formatWhatsAppNumber } from "./cart.js";
+import { cart } from "./cart.js";
 import { dishes, legend } from "../data/menu.js";
 import { restaurant } from "../config/restaurant.js";
 
@@ -23,14 +23,29 @@ beltHeading.textContent = restaurant.tagline;
 footerAddr.textContent = restaurant.address;
 footerHours.textContent = restaurant.hours;
 
+if (footerWa && restaurant.whatsapp) {
+  const digits = String(restaurant.whatsapp).replace(/\D/g, "");
+  footerWa.href = `https://wa.me/${digits}`;
+  footerWa.textContent = `WhatsApp ${restaurant.name}`;
+}
+
+const tierLegend = {};
+dishes.forEach((d) => {
+  if (d.tier && !tierLegend[d.tier]) {
+    tierLegend[d.tier] = d.price;
+  }
+});
+
 function updateCartBadge() {
   const count = cart.getItems().reduce((sum, it) => sum + it.qty, 0);
   cartBadge.textContent = count;
 }
 updateCartBadge();
 
+let belt;
+
 function renderMenuGrid(dishList) {
-  menuGrid.innerHTML = "";
+  while (menuGrid.firstChild) menuGrid.removeChild(menuGrid.firstChild);
   const byTier = {};
   dishList.forEach((d) => {
     if (!byTier[d.tier]) byTier[d.tier] = [];
@@ -42,7 +57,11 @@ function renderMenuGrid(dishList) {
   legend.forEach((item) => {
     const el = document.createElement("div");
     el.className = "legend-item";
-    el.innerHTML = `<span class="legend-circle" style="background:var(--tier-${item.tier})"></span>${item.label}`;
+    const circle = document.createElement("span");
+    circle.className = "legend-circle";
+    circle.style.background = `var(--tier-${item.tier})`;
+    el.appendChild(circle);
+    el.appendChild(document.createTextNode(item.label));
     legendWrapper.appendChild(el);
   });
   menuGrid.appendChild(legendWrapper);
@@ -51,33 +70,51 @@ function renderMenuGrid(dishList) {
     const section = document.createElement("div");
     section.className = "tier-section";
     const tierHeading = document.createElement("h3");
-    tierHeading.textContent = `Tier ${tier}`;
+    const priceLabel = tierLegend[tier] || "";
+    tierHeading.textContent = `${priceLabel} plates`;
     section.appendChild(tierHeading);
 
     tierDishes.forEach((d) => {
       const li = document.createElement("li");
       li.className = "menu-item";
-      li.innerHTML = `
-        <img src="${d.image}" alt="${d.name} ${d.price}" width="120" height="120" loading="lazy" style="border-radius:999px;object-fit:contain;">
-        <div>
-          <h4>${d.name}</h4>
-          <p>${d.description}</p>
-          <p><strong>${d.price}</strong></p>
-        </div>
-      `;
-      li.querySelector("img").addEventListener("click", () => openPlateDialog(d));
-      li.addEventListener("click", (e) => {
-        if (e.target.tagName !== "IMG") addDishToCart(d);
+
+      const img = document.createElement("img");
+      img.src = d.image;
+      img.alt = `${d.name} ${d.price}`;
+      img.width = 120;
+      img.height = 120;
+      img.loading = "lazy";
+      img.style.borderRadius = "999px";
+      img.style.objectFit = "contain";
+
+      const content = document.createElement("div");
+      const h4 = document.createElement("h4");
+      h4.textContent = d.name;
+      const pDesc = document.createElement("p");
+      pDesc.textContent = d.description;
+      const pPrice = document.createElement("p");
+      const strong = document.createElement("strong");
+      strong.textContent = d.price;
+      pPrice.appendChild(strong);
+
+      content.appendChild(h4);
+      content.appendChild(pDesc);
+      content.appendChild(pPrice);
+
+      li.appendChild(img);
+      li.appendChild(content);
+
+      const index = dishes.findIndex((item) => item.id === d.id);
+      li.addEventListener("click", () => {
+        if (belt && index !== -1) {
+          belt.open(index);
+        }
       });
+
       section.appendChild(li);
     });
     menuGrid.appendChild(section);
   });
-}
-
-function openPlateDialog(dish) {
-  // menu grid items sit outside the belt, so their dialog goes straight to the cart
-  addDishToCart(dish);
 }
 
 function addDishToCart(dish) {
@@ -93,20 +130,18 @@ function addDishToCart(dish) {
 function renderBelt() {
   const beltContainer = document.querySelector(".belt-container");
   if (!beltContainer) return;
-  beltContainer.innerHTML = "";
+  while (beltContainer.firstChild) beltContainer.removeChild(beltContainer.firstChild);
 
-  window.chefDishes = dishes; // read by belt.js when reduced motion preference changes
-  const belt = initBelt(beltContainer, {
+  return initBelt(beltContainer, {
     dishes,
     container: beltContainer,
     autoplay: true,
-    speed: 18000,
+    legend: tierLegend,
     onPlateSelect: (dish) => addDishToCart(dish),
   });
-  return belt;
 }
 
-renderBelt();
+belt = renderBelt();
 renderMenuGrid(dishes);
 
 if (seeFullMenu) {
@@ -121,7 +156,7 @@ function toggleCartDrawer() {
   cartOpen = !cartOpen;
   cartDrawer.classList.toggle("open", cartOpen);
   const focusTarget = cartOpen
-    ? cartDrawer.querySelector('button, [href], input')
+    ? cartDrawer.querySelector("button, [href], input")
     : document.querySelector(".cart-btn");
   focusTarget?.focus();
 }
@@ -132,34 +167,59 @@ cartDrawer.addEventListener("click", (e) => {
 });
 
 function renderCartItems() {
-  cartItems.innerHTML = "";
+  while (cartItems.firstChild) cartItems.removeChild(cartItems.firstChild);
   const items = cart.getItems();
   if (items.length === 0) {
-    cartItems.innerHTML = `<p>Your cart is empty</p>`;
+    const emptyP = document.createElement("p");
+    emptyP.textContent = "Your cart is empty";
+    cartItems.appendChild(emptyP);
   } else {
     items.forEach((it) => {
       const div = document.createElement("div");
       div.className = "item";
-      div.innerHTML = `
-        <span>${it.name}</span>
-        <div class="qty-controls">
-          <button class="qty-btn" data-id="${it.id}" data-delta="-1">−</button>
-          <span class="qty">${it.qty}</span>
-          <button class="qty-btn" data-id="${it.id}" data-delta="1">+</button>
-        </div>
-        <span>${it.price}</span>
-      `;
-      div.querySelectorAll(".qty-btn").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          if (Number(btn.getAttribute("data-delta")) > 0) {
-            cart.increment(it.id);
-          } else {
-            cart.remove(it.id);
-          }
-          updateCartBadge();
-          renderCartItems();
-        });
+
+      const nameSpan = document.createElement("span");
+      nameSpan.textContent = it.name;
+
+      const controls = document.createElement("div");
+      controls.className = "qty-controls";
+
+      const decBtn = document.createElement("button");
+      decBtn.className = "qty-btn";
+      decBtn.setAttribute("data-id", it.id);
+      decBtn.setAttribute("data-delta", "-1");
+      decBtn.textContent = "-";
+      decBtn.addEventListener("click", () => {
+        cart.remove(it.id);
+        updateCartBadge();
+        renderCartItems();
       });
+
+      const qtySpan = document.createElement("span");
+      qtySpan.className = "qty";
+      qtySpan.textContent = String(it.qty);
+
+      const incBtn = document.createElement("button");
+      incBtn.className = "qty-btn";
+      incBtn.setAttribute("data-id", it.id);
+      incBtn.setAttribute("data-delta", "1");
+      incBtn.textContent = "+";
+      incBtn.addEventListener("click", () => {
+        cart.increment(it.id);
+        updateCartBadge();
+        renderCartItems();
+      });
+
+      controls.appendChild(decBtn);
+      controls.appendChild(qtySpan);
+      controls.appendChild(incBtn);
+
+      const priceSpan = document.createElement("span");
+      priceSpan.textContent = it.price;
+
+      div.appendChild(nameSpan);
+      div.appendChild(controls);
+      div.appendChild(priceSpan);
       cartItems.appendChild(div);
     });
   }
@@ -187,9 +247,4 @@ if (deliveryForm) {
     toggleCartDrawer();
     deliveryForm.reset();
   });
-}
-
-if (footerWa && restaurant.whatsapp) {
-  footerWa.href = `wa.me/${formatWhatsAppNumber(restaurant.whatsapp)}`;
-  footerWa.textContent = `WhatsApp ${restaurant.name}`;
 }
