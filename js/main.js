@@ -9,6 +9,7 @@ const headerName = document.getElementById("header-name");
 const cartBadge = document.getElementById("cart-badge");
 const seeFullMenu = document.getElementById("see-full-menu");
 const menuGrid = document.getElementById("menu-grid");
+const heroLegend = document.getElementById("hero-legend");
 const footerAddr = document.getElementById("footer-address");
 const footerHours = document.getElementById("footer-hours");
 const footerWa = document.getElementById("footer-whatsapp");
@@ -38,6 +39,27 @@ dishes.forEach((d) => {
   }
 });
 
+function renderHeroLegend() {
+  if (!heroLegend) return;
+  while (heroLegend.firstChild) heroLegend.removeChild(heroLegend.firstChild);
+  legend.forEach((item) => {
+    const price = tierLegend[item.tier];
+    if (!price) return;
+    const el = document.createElement("span");
+    el.className = "hero-legend-item";
+
+    const ring = document.createElement("span");
+    ring.className = `hero-legend-ring hero-legend-ring-${item.tier}`;
+
+    const label = document.createElement("span");
+    label.textContent = price;
+
+    el.appendChild(ring);
+    el.appendChild(label);
+    heroLegend.appendChild(el);
+  });
+}
+
 function updateCartBadge() {
   const count = cart.getItems().reduce((sum, it) => sum + it.qty, 0);
   cartBadge.textContent = count;
@@ -54,20 +76,6 @@ function renderMenuGrid(dishList) {
     byTier[d.tier].push(d);
   });
 
-  const legendWrapper = document.createElement("div");
-  legendWrapper.className = "legend";
-  legend.forEach((item) => {
-    const el = document.createElement("div");
-    el.className = "legend-item";
-    const circle = document.createElement("span");
-    circle.className = "legend-circle";
-    circle.style.background = `var(--tier-${item.tier})`;
-    el.appendChild(circle);
-    el.appendChild(document.createTextNode(item.label));
-    legendWrapper.appendChild(el);
-  });
-  menuGrid.appendChild(legendWrapper);
-
   Object.entries(byTier).forEach(([tier, tierDishes]) => {
     const section = document.createElement("div");
     section.className = "tier-section";
@@ -82,29 +90,47 @@ function renderMenuGrid(dishList) {
 
       const img = document.createElement("img");
       img.src = d.image;
-      img.alt = `${d.name} ${d.price}`;
-      img.width = 120;
-      img.height = 120;
+      img.alt = `${d.name}, ${d.price}`;
+      img.width = 72;
+      img.height = 72;
       img.loading = "lazy";
-      img.style.borderRadius = "999px";
-      img.style.objectFit = "contain";
 
-      const content = document.createElement("div");
+      const body = document.createElement("div");
+      body.className = "menu-item-body";
+
       const h4 = document.createElement("h4");
+      h4.className = "menu-item-name";
       h4.textContent = d.name;
-      const pDesc = document.createElement("p");
-      pDesc.textContent = d.description;
-      const pPrice = document.createElement("p");
-      const strong = document.createElement("strong");
-      strong.textContent = d.price;
-      pPrice.appendChild(strong);
 
-      content.appendChild(h4);
-      content.appendChild(pDesc);
-      content.appendChild(pPrice);
+      const pDesc = document.createElement("p");
+      pDesc.className = "menu-item-desc";
+      pDesc.textContent = d.description;
+
+      const footer = document.createElement("div");
+      footer.className = "menu-item-footer";
+
+      const price = document.createElement("span");
+      price.className = "menu-item-price";
+      price.textContent = d.price;
+
+      const addBtn = document.createElement("button");
+      addBtn.className = "menu-item-add";
+      addBtn.setAttribute("aria-label", `Add ${d.name} to order`);
+      addBtn.innerHTML = '<svg aria-hidden="true" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14" /><path d="M5 12h14" /></svg>';
+      addBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        addDishToCart(d);
+      });
+
+      footer.appendChild(price);
+      footer.appendChild(addBtn);
+
+      body.appendChild(h4);
+      body.appendChild(pDesc);
+      body.appendChild(footer);
 
       li.appendChild(img);
-      li.appendChild(content);
+      li.appendChild(body);
 
       const index = dishes.findIndex((item) => item.id === d.id);
       li.addEventListener("click", () => {
@@ -145,6 +171,7 @@ function renderBelt() {
 }
 
 belt = renderBelt();
+renderHeroLegend();
 renderMenuGrid(dishes);
 
 if (seeFullMenu) {

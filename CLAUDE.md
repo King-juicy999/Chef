@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+## Rule
+
+For any front end design work, always use your available skills before and while writing UI code. Check the full list of installed skills and use every one that is relevant to front end design, UI, UX, layout, styling, motion and polish. Do not limit yourself to a few. Say which skills you used.
+
 Chef is a white label food ordering website template for Nigerian restaurants, built with plain HTML, CSS and JavaScript.
 
 Before starting any task, read [PROJECT.md](PROJECT.md) and [DESIGN.md](DESIGN.md) completely. They explain what the project is, how it is structured, and how it should look, feel and behave.
