@@ -3,6 +3,8 @@ import { cart } from "./cart.js";
 import { dishes, legend } from "../data/menu.js";
 import { restaurant } from "../config/restaurant.js";
 
+const BELT_SPEED = 60;
+
 const headerName = document.getElementById("header-name");
 const cartBadge = document.getElementById("cart-badge");
 const seeFullMenu = document.getElementById("see-full-menu");
@@ -135,7 +137,8 @@ function renderBelt() {
   return initBelt(beltContainer, {
     dishes,
     container: beltContainer,
-    autoplay: true,
+    speed: BELT_SPEED,
+    autoplay: false,
     legend: tierLegend,
     onPlateSelect: (dish) => addDishToCart(dish),
   });

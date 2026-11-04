@@ -560,7 +560,7 @@ function initBelt(container, options = {}) {
 
   const items = options.items || options.dishes || [];
   const count = items.length;
-  const speedProp = options.speed !== undefined ? (options.speed > 200 ? 26 : options.speed) : 26;
+  const speedProp = options.speed !== undefined ? options.speed : 26;
   const autoplay = options.autoplay !== undefined ? options.autoplay : true;
   const interval = options.interval || 3000;
   const labels = { ...DEFAULT_LABELS, ...(options.labels || {}) };
@@ -591,11 +591,17 @@ function initBelt(container, options = {}) {
     kick();
   });
 
-  const wide = size.section >= WIDE;
-  const narrow = size.section > 0 && size.section < 480;
-  const kb = narrow ? 0.6 : 0.68;
+  let wide = false;
+  let kb = 0.68;
+
+  function deriveLayout() {
+    const narrow = size.section > 0 && size.section < 480;
+    wide = size.section >= WIDE;
+    kb = narrow ? 0.6 : 0.68;
+  }
 
   function calculateGeo() {
+    deriveLayout();
     if (!size.stage || count === 0) return null;
     const span = halfSpan(makeGeo(1000, count, 100, kb)) / 100;
     const cap = wide ? 150 : clamp(size.section * 0.143, 96, 150);
@@ -1349,8 +1355,12 @@ function initBelt(container, options = {}) {
     const sectionWidth = Math.round(container.clientWidth || window.innerWidth);
     const stageWidth = Math.round(stage.clientWidth || sectionWidth);
     if (size.section === sectionWidth && size.stage === stageWidth) return;
+    const wasWide = wide;
     size = { section: sectionWidth, stage: stageWidth };
     geo = calculateGeo();
+    if (wasWide !== wide) {
+      section.setAttribute("data-layout", wide ? "wide" : "stack");
+    }
     live.geo = geo;
     if (!geo) return;
     if (!sim.init) {
