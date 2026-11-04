@@ -2,95 +2,87 @@
 
 ## 1. Direction
 
-Premium, neutral, restrained. The look follows the original 21st.dev sushi conveyor demo: a near black or near white canvas, quiet greys, and the food photos and four tier accent colours doing the only colour work on the page. No warm or brown tones anywhere; if a decoration does not make the food look better, it does not ship.
+"Nzu chalk" - warm ivory page like chalk, cocoa ink text, one bold hibiscus accent. Light and premium.
+This replaces the previous neutral grey and blue theme completely. Single light theme only - no dark mode.
+Warm browns are used only as accent tier rings; every decoration should make the food look better, nothing else ships.
 
 ## 2. Colour tokens
 
-All colours are CSS variables in `:root` from `css/styles.css`, with a dark mode under `prefers-color-scheme`. Both palettes share the same tier ring colours; the neutrals are effectively a zinc scale:
+All colours are CSS variables in `:root` from `css/styles.css`. OKLCH equivalents follow each hex value as fallback.
+No pure #000 or #fff for text or surfaces.
 
 ```css
 :root {
-  --background: #fafafa;
-  --foreground: #0a0a0a;
-  --card: #ffffff;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --border: #e4e4e7;
-  --ring: #3b82f6;              /* focus ring, blue */
-  --accent: #3b82f6;
-  /* tier ring colours, tiers 1 to 5 */
-  --tier-1: #3b82f6;            /* blue */
-  --tier-2: #10b981;            /* green */
-  --tier-3: #f59e0b;            /* amber */
-  --tier-4: #a855f7;            /* violet */
-  --tier-5: #f43f5e;            /* rose */
-}
+  --background: #F4EEE2;      /* page: warm ivory chalk */
+  --foreground: #261A14;      /* ink: cocoa text */
+  --card: #FBF7EE;            /* card surface */
+  --muted: #E2D7C3;           /* card border / placeholder */
+  --muted-foreground: #6E5E52;/* muted ink */
+  --border: #E2D7C3;          /* card border */
+  --ring: #7A1E46;            /* focus ring, accent */
+  --accent: #7A1E46;          /* hibiscus accent */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0b0b0c;
-    --foreground: #fafafa;
-    --card: #18181b;
-    --muted: #27272a;
-    --muted-foreground: #a1a1aa;
-    --border: #27272a;
-    --ring: #60a5fa;
-    --accent: #60a5fa;
-  }
+  /* accent text on accent */
+  --accent-foreground: #FFF6EC;
+
+  /* tier ring colours, tiers 1 to 5 */
+  --tier-1: #7A1E46;          /* hibiscus */
+  --tier-2: #C2562B;          /* burnt sienna */
+  --tier-3: #D9A21B;          /* mustard */
+  --tier-4: #2F6F5E;          /* sage green */
+  --tier-5: #3E4A9E;          /* indigo */
+
+  /* belt surfaces - light grey warm belt with white rails */
+  --belt: #D3C5AE;
+  --belt-side: #BFAF95;
+  --rail: #FFFAF0;
+  --island: #E6DBC8;
+  --island-low: #DACDB7;
+  --island-wall: #C8B99F;
+
+  --belt-glow: color-mix(in oklab, var(--accent) 3%, transparent);
 }
 ```
 
-The tier variables are identical in both schemes; only the neutrals switch.
+No `prefers-color-scheme` dark palette - single light theme only.
 
 ### Belt surfaces
 
-The belt reads as furniture: a neutral dark grey belt with light grey rails in dark mode, a light grey belt with white rails in light mode. The surface colours stay derived from the theme tokens so white labelling still restyles the belt automatically:
-
-```css
-/* :root (light) */
---belt: color-mix(in oklab, var(--foreground) 6%, var(--background));   /* light grey belt */
---belt-side: color-mix(in oklab, var(--foreground) 12%, var(--background));
---rail: color-mix(in oklab, white 88%, var(--muted-foreground));        /* white rails */
---island: color-mix(in oklab, var(--foreground) 8%, var(--background));
---island-low: color-mix(in oklab, var(--foreground) 4%, var(--background));
---island-wall: color-mix(in oklab, var(--foreground) 18%, var(--background));
-
-/* dark scheme */
---belt: color-mix(in oklab, var(--foreground) 9%, var(--background));   /* dark grey belt */
---belt-side: color-mix(in oklab, var(--foreground) 4%, var(--background));
---rail: color-mix(in oklab, var(--muted-foreground) 60%, var(--background)); /* light grey rails */
---island: color-mix(in oklab, var(--foreground) 3%, var(--background));
---island-low: color-mix(in oklab, var(--foreground) 1%, var(--background));
---island-wall: color-mix(in oklab, var(--foreground) 16%, var(--background));
-```
-
-There is no decorative glow behind the belt. The old radial `.belt-glow` was removed; the page background does the work.
+The belt reads as furniture: a warm grey belt with ivory rails. Belt slat seams are soft - ink (#261A14) at about 18 percent opacity, not black at 42 percent. Plate shadows are lighter than before. No decorative glow behind the belt (the old radial `.belt-glow` was removed); the page background does the work.
 
 ## 3. Typography
 
-- **Inter** everywhere, headings and body. Loaded from Google Fonts with `font-display: swap`, system `system-ui` fallback.
-- No serif fonts anywhere.
-- Headings are medium weight (500 to 600), never bold poster weight, with tight tracking: about `-0.02em` on headings, `-0.03em` on the hero h1.
+Two families only:
+
+- **Instrument Serif** - hero heading, dish names in menu grid and dialog, section headings. Loaded from Google Fonts with `display=swap`, system serif fallback.
+- **Instrument Sans** - body, labels, buttons, prices, cart, drawer, footer. Loaded from Google Fonts with `display=swap`, system `system-ui` fallback.
+
+No Inter anywhere. No serif mixed into body copy except where the design calls for Instrument Serif.
+
+- Headings are medium weight (500 to 600), tight tracking: about `-0.02em` on headings, `-0.03em` on the hero h1.
 - Body stays near 0 tracking. Small uppercase labels (section label, tier headings) use `0.2em` letter spacing at 500 weight.
 - Numbers that line up (prices, counts, the dialog counter) use `font-variant-numeric: tabular-nums`.
+- Check that the naira sign (₦) renders in the chosen fonts; if it does not, set prices to fall back to a system font that has it.
 
 ## 4. Spacing, radius and shadows
 
 - Pill shapes (`border-radius: 999px`) for every button, chip and badge; 1rem radius for cards and 0.75rem for inputs.
 - Thin 1px borders from `--border` define surfaces; shadows stay soft and low opacity (`0 1px 2px rgba(0,0,0,0.05)` on buttons, `0 8px 24px rgba(0,0,0,0.06)` on card hover). The dialog card carries the one deep shadow.
 - Generous spacing on an 8px scale. The header and main content cap at 80rem and centre.
-- Focus rings use `--ring` (blue) with visible offset, never removed, plus every button gets `transform: scale(0.97)` on `:active` as press feedback.
+- Focus rings use `--ring` (hibiscus) with visible offset, never removed, plus every button gets `transform: scale(0.97)` on `:active` as press feedback.
 
 ## 5. Belt visuals
 
 - Plates are round dishes rendered on the loop, sized by their 3D position so perspective comes for free out of geometry rather than a hack.
-- Each plate carries a **tier ring**: a coloured ring around the plate whose colour comes from `--tier-1` through `--tier-5`.
-- Under the hero heading sits a **price legend**: for each tier, a ringed dot in the tier colour followed by the tier's price, rendered by `main.js` from `data/menu.js`. No tier words (Starter, Main, and so on) are displayed; the colours carry the meaning with the price next to them.
-- When a plate is selected it lifts off the belt with a spring and a **price chip** appears above it.
-- The back lane is smaller and shaded so the front lane owns the eye.
-- The rail keeps its slat seams as CSS/SVG gradients, not images.
+- Each plate carries a tier ring: a coloured ring around the plate whose colour comes from `--tier-1` through `--tier-5`.
+- Under the hero heading sits a price legend: for each tier, a ringed dot in the tier colour followed by the tier's price, rendered by `main.js` from `data/menu.js`. No tier words; the colours carry the meaning with the price next to them.
+- When a plate is selected it lifts off the belt with a spring and a price chip appears above it.
+- Price chips use the card colour with ink text and a tier dot.
+- The back lane is smaller and shaded so the front lane owns the eye. Plate shade is `--foreground` at 5 percent opacity (lighter than before).
+- The rail keeps its slat seams as CSS/SVG gradients, not images. Seam colour is ink at 18 percent opacity.
 - The control buttons under the belt are small ghost circles: transparent background, hairline border in mixed foreground, muted icon, colour fill on hover.
-- The dialog keeps plate left, details right, stacked on mobile, with the solid foreground pill as the Add to order button.
+- The dialog keeps plate left, details right, stacked on mobile, with the solid hibiscus pill as the Add to order button.
+- A faint warm glow behind the belt is kept very subtle.
 
 ## 6. Behaviour and motion
 
@@ -117,12 +109,13 @@ Mobile first, then scale up:
 - Full keyboard control of the belt: left and right arrows, Enter opens the dialog, Escape closes, and previous, next and pause are real buttons.
 - Dialog focus trap, focus return, and `aria-label` per plate.
 - The belt caption is a live region.
-- Contrast held in both themes: `#a1a1aa` on `#18181b` and `#71717a` on `#fafafa` for secondary text, tier rings never the only signal.
+- Contrast held in the light theme: ink #261A14 on page #F4EEE2, muted ink #6E5E52 on page, accent text #FFF6EC on accent #7A1E46. Each pair at least 4.5:1. Tier rings never the only signal.
 
 ## 9. Imagery
 
 - Top down plate photos with one consistent key light, transparent square canvas around 800px, webp compressed.
 - Broken images fall back to a neutral round placeholder rendered by JS.
+- Plate image background stays transparent; plate rim glow #FFFDF8.
 
 ## 10. Copy tone
 
@@ -130,3 +123,7 @@ Mobile first, then scale up:
 - Short sentences. The voice of a person behind the counter.
 - Prices formatted like ₦3,500, in Naira with a thousands separator, from `config/restaurant.js`.
 - No hyphens used as dashes anywhere. Sentence punctuation is commas, full stops, colons or parentheses instead.
+
+## 11. Chalk detail
+
+A very fine paper grain sits on the page background, and hand drawn nzu style hairlines appear under section headings. Both are quiet and never compete with the food photos.
