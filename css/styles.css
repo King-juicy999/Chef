@@ -629,7 +629,7 @@ header { position: sticky; top: 0; background: var(--card); z-index: 50; }
 
 .hero { width: 100%; }
 
-.belt-container { width: 100%; min-width: 0; }
+.belt-container { width: 100%; max-width: 100%; min-width: 0; }
 
 @media (max-width: 1023px) {
   .hero {

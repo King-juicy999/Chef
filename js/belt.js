@@ -1351,10 +1351,10 @@ function initBelt(container, options = {}) {
   pauseBtn.addEventListener("click", togglePause);
   nextBtn.addEventListener("click", () => go((live.active ?? sim.center) + 1, false));
 
-  function resize() {
+  function resize(force = false) {
     const sectionWidth = Math.round(container.clientWidth || window.innerWidth);
     const stageWidth = Math.round(stage.clientWidth || sectionWidth);
-    if (size.section === sectionWidth && size.stage === stageWidth) return;
+    if (!force && size.section === sectionWidth && size.stage === stageWidth) return;
     const wasWide = wide;
     size = { section: sectionWidth, stage: stageWidth };
     geo = calculateGeo();
@@ -1385,7 +1385,7 @@ function initBelt(container, options = {}) {
     kick();
   }
 
-  const resizeObserver = new ResizeObserver(resize);
+  const resizeObserver = new ResizeObserver(() => resize());
   resizeObserver.observe(container);
   resizeObserver.observe(stage);
 
@@ -1433,7 +1433,7 @@ function initBelt(container, options = {}) {
   intersectionObserver.observe(section);
   document.addEventListener("visibilitychange", updateInView);
 
-  resize();
+  resize(true);
 
   return {
     open,
