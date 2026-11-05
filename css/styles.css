@@ -885,7 +885,8 @@ main { max-width: 80rem; margin-inline: auto; padding: 0 1rem 3rem; }
 }
 @media (min-width: 640px) {
   .pour-root {
-    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+    grid-template-columns: minmax(0, 20rem) minmax(0, 30rem);
+    justify-content: center;
     gap: 2rem;
   }
 }
@@ -1023,6 +1024,24 @@ main { max-width: 80rem; margin-inline: auto; padding: 0 1rem 3rem; }
   .pour-btn,
   .pour-order-add {
     transition: none;
+  }
+}
+@media (min-width: 640px) {
+  .drinks-section { padding-bottom: 1.5rem; }
+  .drinks-hero { margin-bottom: 0.75rem; }
+  .drinks-hero .section-heading { font-size: clamp(1.75rem, 3.5vw, 2.5rem); }
+  .pour-stage {
+    width: min(100%, calc(62vh * 0.9), 30rem);
+    margin-inline: auto;
+  }
+  .pour-btn-name {
+    font-size: 1.375rem;
+    letter-spacing: 0;
+  }
+  .pour-btn-sub { font-size: 0.875rem; }
+  .pour-order-name {
+    font-size: 1.5rem;
+    letter-spacing: 0;
   }
 }
 
