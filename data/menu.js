@@ -1,10 +1,10 @@
-export const legend = [
-  { tier: 1, label: "Starter" },
-  { tier: 2, label: "Main" },
-  { tier: 3, label: "Special" },
-  { tier: 4, label: "Premium" },
-  { tier: 5, label: "Chef's Choice" },
-]
+export const legend = {
+  1: "₦1,500",
+  2: "₦2,500",
+  3: "₦3,500",
+  4: "₦4,500",
+  5: "₦6,000",
+}
 
 export const dishes = [
   {
@@ -14,10 +14,7 @@ export const dishes = [
     price: "₦1,500",
     tier: 1,
     image: "images/dishes/dodo.webp",
-    details: [
-      { label: "Portion", value: "2 pcs" },
-      { label: "Spice level", value: "Mild" },
-    ],
+    details: ["2 pcs", "Mild"],
   },
   {
     id: "puff-puff",
@@ -26,10 +23,7 @@ export const dishes = [
     price: "₦1,500",
     tier: 1,
     image: "images/dishes/puff-puff.webp",
-    details: [
-      { label: "Portion", value: "3 pcs" },
-      { label: "Spice level", value: "Mild" },
-    ],
+    details: ["3 pcs", "Mild"],
   },
   {
     id: "moi-moi",
@@ -38,10 +32,7 @@ export const dishes = [
     price: "₦2,500",
     tier: 2,
     image: "images/dishes/moi-moi.webp",
-    details: [
-      { label: "Portion", value: "1 medium slice" },
-      { label: "Spice level", value: "Medium" },
-    ],
+    details: ["1 medium slice", "Medium"],
   },
   {
     id: "akara-pap",
@@ -50,11 +41,7 @@ export const dishes = [
     price: "₦2,500",
     tier: 2,
     image: "images/dishes/akara-pap.webp",
-    details: [
-      { label: "Portion", value: "2 pcs + pap bowl" },
-      { label: "Spice level", value: "Medium" },
-      { label: "Allergens", value: "Contains soy" },
-    ],
+    details: ["2 pcs + pap bowl", "Medium", "Contains soy"],
   },
   {
     id: "jollof-chicken",
@@ -63,10 +50,7 @@ export const dishes = [
     price: "₦3,500",
     tier: 3,
     image: "images/dishes/jollof-chicken.webp",
-    details: [
-      { label: "Portion", value: "1.5 cups rice + 2 pc chicken" },
-      { label: "Spice level", value: "Medium" },
-    ],
+    details: ["1.5 cups rice + 2 pc chicken", "Medium"],
   },
   {
     id: "fried-rice-turkey",
@@ -75,10 +59,7 @@ export const dishes = [
     price: "₦3,500",
     tier: 3,
     image: "images/dishes/fried-rice-turkey.webp",
-    details: [
-      { label: "Portion", value: "1.5 cups rice + 2 pc turkey" },
-      { label: "Spice level", value: "Mild" },
-    ],
+    details: ["1.5 cups rice + 2 pc turkey", "Mild"],
   },
   {
     id: "suya",
@@ -87,11 +68,7 @@ export const dishes = [
     price: "₦4,500",
     tier: 4,
     image: "images/dishes/suya.webp",
-    details: [
-      { label: "Portion", value: "2 skewers" },
-      { label: "Spice level", value: "Hot" },
-      { label: "Allergens", value: "Contains nuts (peanut rub)" },
-    ],
+    details: ["2 skewers", "Hot", "Contains nuts (peanut rub)"],
   },
   {
     id: "amala-ewedu-gbegiri",
@@ -100,10 +77,7 @@ export const dishes = [
     price: "₦4,500",
     tier: 4,
     image: "images/dishes/amala-ewedu-gbegiri.webp",
-    details: [
-      { label: "Portion", value: "1 small bowl each" },
-      { label: "Spice level", value: "Medium" },
-    ],
+    details: ["1 small bowl each", "Medium"],
   },
   {
     id: "pounded-yam-egusi",
@@ -112,10 +86,7 @@ export const dishes = [
     price: "₦6,000",
     tier: 5,
     image: "images/dishes/pounded-yam-egusi.webp",
-    details: [
-      { label: "Portion", value: "1 large swallow" },
-      { label: "Spice level", value: "Hot" },
-    ],
+    details: ["1 large swallow", "Hot"],
   },
   {
     id: "goat-pepper-soup",
@@ -124,10 +95,179 @@ export const dishes = [
     price: "₦6,000",
     tier: 5,
     image: "images/dishes/goat-pepper-soup.webp",
-    details: [
-      { label: "Portion", value: "1 bowl" },
-      { label: "Spice level", value: "Hot" },
-      { label: "Allergens", value: "Contains fish stock" },
+    details: ["1 bowl", "Hot", "Contains fish stock"],
+  },
+]
+
+// Slot meaning: deep is the strong layer, clear is the thin layer, creamy is the
+// opaque layer. Each drink carries its own colours so the pour physics stays generic.
+export const drinks = [
+  {
+    id: "chapman",
+    name: "Chapman",
+    subtitle: "The classic red cooler",
+    description: "Fanta and grenadine with Angostura bitters, cucumber and lemon over ice.",
+    price: "₦2,500",
+    vessel: "tall-glass",
+    layers: [
+      { type: "deep", amount: 0.22 },
+      { type: "clear", amount: 0.52 },
     ],
+    crema: false,
+    foam: 0.05,
+    art: "none",
+    blend: 0.15,
+    colours: {
+      deep: {
+        stream: "rgb(178,32,62)", a: 1, hi: 0.4, swirl: "rgb(178,32,62)",
+        ramp: [[0, [246, 224, 214]], [0.3, [196, 72, 88]], [0.7, [138, 26, 54]], [1, [86, 10, 34]]],
+      },
+      clear: { stream: "rgb(238,146,42)", a: 0.85, hi: 1, swirl: "rgb(246,196,128)" },
+      creamy: {
+        stream: "rgb(247,242,228)", a: 1, hi: 0.9, swirl: "rgb(248,244,232)",
+        base: [248, 244, 232],
+        ramp: [[0.3, [168, 108, 52]], [0.55, [200, 154, 104]], [0.75, [226, 192, 152]], [0.9, [240, 224, 198]], [1, [248, 244, 232]]],
+      },
+      foam: [247, 232, 210],
+    },
+  },
+  {
+    id: "zobo",
+    name: "Zobo",
+    subtitle: "Chilled hibiscus, deep red",
+    description: "Dried hibiscus brewed with ginger, pineapple and a hint of clove.",
+    price: "₦1,500",
+    vessel: "tall-glass",
+    layers: [
+      { type: "deep", amount: 0.5 },
+      { type: "clear", amount: 0.28 },
+    ],
+    crema: false,
+    art: "none",
+    blend: 0.9,
+    colours: {
+      deep: {
+        stream: "rgb(118,22,58)", a: 1, hi: 0.32, swirl: "rgb(120,26,62)",
+        ramp: [[0, [240, 216, 214]], [0.3, [168, 58, 88]], [0.7, [118, 26, 62]], [1, [82, 10, 40]]],
+      },
+      clear: { stream: "rgb(234,190,200)", a: 0.72, hi: 1, swirl: "rgb(240,208,216)" },
+      creamy: {
+        stream: "rgb(246,238,226)", a: 1, hi: 0.9, swirl: "rgb(246,240,228)",
+        base: [246, 238, 226],
+        ramp: [[0.3, [140, 74, 50]], [0.55, [182, 122, 84]], [0.75, [218, 178, 142]], [0.9, [236, 218, 196]], [1, [246, 238, 226]]],
+      },
+      foam: [242, 224, 216],
+    },
+  },
+  {
+    id: "tiger-nut",
+    name: "Tiger Nut Milk",
+    subtitle: "Kunun aya, chilling",
+    description: "Tiger nuts pressed with dates and a little cinnamon, served cold.",
+    price: "₦2,000",
+    vessel: "glass-mug",
+    layers: [
+      { type: "creamy", amount: 0.66 },
+    ],
+    crema: false,
+    art: "none",
+    blend: 1,
+    colours: {
+      deep: {
+        stream: "rgb(122,86,50)", a: 1, hi: 0.35, swirl: "rgb(122,86,50)",
+        ramp: [[0, [240, 232, 214]], [0.3, [178, 142, 98]], [0.7, [132, 96, 58]], [1, [96, 64, 34]]],
+      },
+      clear: { stream: "rgb(208,214,206)", a: 0.7, hi: 1, swirl: "rgb(222,228,220)" },
+      creamy: {
+        stream: "rgb(242,222,190)", a: 1, hi: 0.92, swirl: "rgb(246,228,200)",
+        base: [246, 226, 196],
+        ramp: [[0.3, [128, 92, 54]], [0.55, [178, 142, 96]], [0.75, [212, 180, 138]], [0.9, [236, 214, 182]], [1, [246, 226, 196]]],
+      },
+      foam: [248, 240, 224],
+    },
+  },
+  {
+    id: "pineapple-ginger",
+    name: "Pineapple Ginger",
+    subtitle: "Fresh and fiery",
+    description: "Pressed pineapple with a ginger kick and a squeeze of lime over ice.",
+    price: "₦2,000",
+    vessel: "glass-mug",
+    layers: [
+      { type: "deep", amount: 0.68 },
+    ],
+    crema: false,
+    foam: 0.04,
+    art: "none",
+    blend: 1,
+    colours: {
+      deep: {
+        stream: "rgb(228,148,24)", a: 0.95, hi: 0.75, swirl: "rgb(238,170,50)",
+        ramp: [[0, [250, 238, 206]], [0.3, [242, 196, 70]], [0.7, [228, 146, 26]], [1, [186, 110, 14]]],
+      },
+      clear: { stream: "rgb(244,214,140)", a: 0.7, hi: 1, swirl: "rgb(248,228,170)" },
+      creamy: {
+        stream: "rgb(248,242,230)", a: 1, hi: 0.9, swirl: "rgb(250,244,232)",
+        base: [248, 242, 230],
+        ramp: [[0.3, [178, 140, 78]], [0.55, [208, 166, 110]], [0.75, [230, 200, 160]], [0.9, [242, 228, 206]], [1, [248, 242, 230]]],
+      },
+      foam: [246, 240, 222],
+    },
+  },
+  {
+    id: "milo",
+    name: "Milo",
+    subtitle: "Chocolate malt, cold",
+    description: "Chocolate malt whisked with cold milk and poured over ice.",
+    price: "₦1,800",
+    vessel: "cup",
+    layers: [
+      { type: "deep", amount: 0.3 },
+      { type: "creamy", amount: 0.44 },
+    ],
+    crema: false,
+    foam: 0.14,
+    art: "none",
+    blend: 1,
+    colours: {
+      deep: {
+        stream: "rgb(74,42,22)", a: 1, hi: 0.35, swirl: "rgb(88,52,28)",
+        ramp: [[0, [238, 216, 192]], [0.3, [150, 94, 50]], [0.7, [96, 54, 26]], [1, [58, 30, 14]]],
+      },
+      clear: { stream: "rgb(238,226,208)", a: 0.6, hi: 1, swirl: "rgb(242,232,214)" },
+      creamy: {
+        stream: "rgb(250,245,236)", a: 1, hi: 0.9, swirl: "rgb(250,246,238)",
+        base: [248, 242, 232],
+        ramp: [[0.3, [118, 72, 40]], [0.55, [172, 118, 74]], [0.75, [210, 168, 126]], [0.9, [234, 214, 192]], [1, [248, 242, 232]]],
+      },
+      foam: [238, 220, 198],
+    },
+  },
+  {
+    id: "ginger-shot",
+    name: "Ginger Shot",
+    subtitle: "Small and punchy",
+    description: "Fresh ginger pressed with lemon and honey in one short glass.",
+    price: "₦1,000",
+    vessel: "demitasse",
+    layers: [
+      { type: "deep", amount: 0.72 },
+    ],
+    crema: false,
+    art: "none",
+    blend: 1,
+    colours: {
+      deep: {
+        stream: "rgb(206,132,22)", a: 1, hi: 0.5, swirl: "rgb(224,152,46)",
+        ramp: [[0, [252, 242, 210]], [0.3, [240, 196, 72]], [0.7, [212, 132, 22]], [1, [160, 92, 10]]],
+      },
+      clear: { stream: "rgb(238,222,170)", a: 0.7, hi: 1, swirl: "rgb(244,230,190)" },
+      creamy: {
+        stream: "rgb(248,240,226)", a: 1, hi: 0.9, swirl: "rgb(248,242,230)",
+        base: [248, 240, 226],
+        ramp: [[0.3, [192, 152, 92]], [0.55, [216, 178, 126]], [0.75, [234, 210, 172]], [0.9, [244, 230, 206]], [1, [248, 240, 226]]],
+      },
+      foam: [244, 226, 180],
+    },
   },
 ]

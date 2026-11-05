@@ -1,6 +1,7 @@
 import { initBelt } from "./belt.js";
 import { cart } from "./cart.js";
-import { dishes, legend } from "../data/menu.js";
+import { initPour } from "./pour.js";
+import { dishes, drinks, legend } from "../data/menu.js";
 import { restaurant } from "../config/restaurant.js";
 
 const BELT_SPEED = 60;
@@ -32,24 +33,17 @@ if (footerWa && restaurant.whatsapp) {
   footerWa.textContent = `WhatsApp ${restaurant.name}`;
 }
 
-const tierLegend = {};
-dishes.forEach((d) => {
-  if (d.tier && !tierLegend[d.tier]) {
-    tierLegend[d.tier] = d.price;
-  }
-});
-
 function renderHeroLegend() {
   if (!heroLegend) return;
   while (heroLegend.firstChild) heroLegend.removeChild(heroLegend.firstChild);
-  legend.forEach((item) => {
-    const price = tierLegend[item.tier];
+  for (let tier = 1; tier <= 5; tier++) {
+    const price = legend[tier];
     if (!price) return;
     const el = document.createElement("span");
     el.className = "hero-legend-item";
 
     const ring = document.createElement("span");
-    ring.className = `hero-legend-ring hero-legend-ring-${item.tier}`;
+    ring.className = `hero-legend-ring hero-legend-ring-${tier}`;
 
     const label = document.createElement("span");
     label.textContent = price;
@@ -57,7 +51,7 @@ function renderHeroLegend() {
     el.appendChild(ring);
     el.appendChild(label);
     heroLegend.appendChild(el);
-  });
+  }
 }
 
 function updateCartBadge() {
@@ -67,6 +61,9 @@ function updateCartBadge() {
 updateCartBadge();
 
 let belt;
+let pour;
+
+const drinksStage = document.getElementById("drinks-stage");
 
 function renderMenuGrid(dishList) {
   while (menuGrid.firstChild) menuGrid.removeChild(menuGrid.firstChild);
@@ -80,13 +77,15 @@ function renderMenuGrid(dishList) {
     const section = document.createElement("div");
     section.className = "tier-section";
     const tierHeading = document.createElement("h3");
-    const priceLabel = tierLegend[tier] || "";
+    const tierNumber = Number(tier);
+    const priceLabel = legend[tierNumber] || "";
     tierHeading.textContent = `${priceLabel} plates`;
     section.appendChild(tierHeading);
 
     tierDishes.forEach((d) => {
       const li = document.createElement("li");
       li.className = "menu-item";
+      li.dataset.tier = d.tier;
 
       const img = document.createElement("img");
       img.src = d.image;
@@ -148,6 +147,7 @@ function renderMenuGrid(dishList) {
 function addDishToCart(dish) {
   cart.add(dish);
   updateCartBadge();
+  renderCartItems();
   const msg = document.createElement("div");
   msg.className = "inline-msg";
   msg.textContent = `${dish.name} added to your order`;
@@ -161,18 +161,24 @@ function renderBelt() {
   while (beltContainer.firstChild) beltContainer.removeChild(beltContainer.firstChild);
 
   return initBelt(beltContainer, {
-    dishes,
-    container: beltContainer,
+    items: dishes,
+    legend,
     speed: BELT_SPEED,
     autoplay: false,
-    legend: tierLegend,
-    onPlateSelect: (dish) => addDishToCart(dish),
+    onAdd: addDishToCart,
   });
 }
 
 belt = renderBelt();
 renderHeroLegend();
 renderMenuGrid(dishes);
+
+function renderDrinks() {
+  if (!drinksStage) return;
+  return initPour(drinksStage, { drinks, onAdd: addDishToCart });
+}
+
+pour = renderDrinks();
 
 if (seeFullMenu) {
   seeFullMenu.addEventListener("click", (e) => {
