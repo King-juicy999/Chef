@@ -30,6 +30,7 @@
   --island-wall: #C8B99F;
 
   --belt-glow: color-mix(in oklab, var(--accent) 3%, transparent);
+}
 
 /* Page background and text */
 html {

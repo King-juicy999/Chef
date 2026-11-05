@@ -7,5 +7,5 @@ export const restaurant = {
   address: "12 Lagos Street, Abuja, Nigeria",
   hours: "Mon to Sat: 11 AM to 10 PM",
   currency: "₦",
-  accentColour: "#3b82f6", // overrides :root --accent per client
+  accentColour: "#7A1E46", // overrides :root --accent per client
 };
