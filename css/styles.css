@@ -48,10 +48,10 @@
   --rim-glow: #FFFDF8;
   --rim-glow: oklch(99.4% 0.007 88.7);
 
-  --font-display: "Instrument Serif", Georgia, serif;
-  --font-body: "Instrument Sans", system-ui, sans-serif;
-  /* Instrument Sans has no naira sign, so prices keep a system font in the stack that does */
-  --font-price: "Instrument Sans", "Segoe UI", system-ui, sans-serif;
+  --font-display: "Fraunces", "Segoe UI", system-ui, serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+  /* DM Sans has no naira sign, so prices keep a system font in the stack that does */
+  --font-price: "DM Sans", "Segoe UI", system-ui, sans-serif;
 }
 
 html {
@@ -74,7 +74,7 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-display);
   font-weight: 400;
   line-height: 1.1;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 p { margin: 0 0 1rem; }
 
@@ -112,7 +112,7 @@ header {
   font-family: var(--font-display);
   font-size: 1.375rem;
   font-weight: 400;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 .header .cart-btn {
   display: inline-flex;
@@ -165,7 +165,7 @@ header {
   font-family: var(--font-display);
   font-size: clamp(2.25rem, 5vw, 3.25rem);
   line-height: 1.05;
-  letter-spacing: -0.015em;
+  letter-spacing: 0;
   margin: 0 0 0.875rem;
   max-width: 18ch;
 }
@@ -656,7 +656,7 @@ header {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.75rem;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 @media (min-width: 640px) {
   .dialog-title { font-size: 2.25rem; }
@@ -702,7 +702,7 @@ header {
   font-family: var(--font-price);
   font-size: 1.5rem;
   font-weight: 600;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   font-variant-numeric: tabular-nums;
   color: var(--accent);
 }
@@ -822,7 +822,7 @@ main { max-width: 80rem; margin-inline: auto; padding: 0 1rem 3rem; }
   font-family: var(--font-price);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
   color: var(--accent);
 }
 .menu-item-add {
@@ -882,13 +882,18 @@ main { max-width: 80rem; margin-inline: auto; padding: 0 1rem 3rem; }
   width: 100%;
   min-width: 0;
   overflow-x: clip;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  padding: 1.75rem;
+  box-shadow: 0 8px 24px rgba(38, 26, 20, 0.08);
 }
 @media (min-width: 640px) {
   .pour-root {
-    grid-template-columns: minmax(0, 20rem) minmax(0, 30rem);
-    justify-content: center;
+    grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
     gap: 2rem;
   }
+  .pour-order { grid-column: 1 / -1; }
 }
 .pour-list {
   position: relative;
@@ -938,13 +943,13 @@ main { max-width: 80rem; margin-inline: auto; padding: 0 1rem 3rem; }
 }
 .pour-btn-name {
   font-family: var(--font-display);
-  font-size: 1.125rem;
-  line-height: 1.15;
-  letter-spacing: -0.01em;
+  font-size: clamp(1.375rem, 2.6vw, 1.875rem);
+  line-height: 1.1;
+  letter-spacing: 0;
   color: var(--foreground);
 }
 .pour-btn-sub {
-  font-size: 0.8125rem;
+  font-size: 0.875rem;
   line-height: 1.45;
   color: var(--muted-foreground);
 }
@@ -970,6 +975,16 @@ main { max-width: 80rem; margin-inline: auto; padding: 0 1rem 3rem; }
   height: 100%;
 }
 .pour-order {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+  border-top: 1px solid var(--border);
+}
+.pour-order-inner {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -977,15 +992,12 @@ main { max-width: 80rem; margin-inline: auto; padding: 0 1rem 3rem; }
   gap: 1rem;
   min-width: 0;
 }
-.pour-order-text {
-  min-width: 0;
-}
 .pour-order-name {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.375rem;
   line-height: 1.1;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 .pour-order-price {
   margin: 0.125rem 0 0;
@@ -1028,20 +1040,11 @@ main { max-width: 80rem; margin-inline: auto; padding: 0 1rem 3rem; }
 }
 @media (min-width: 640px) {
   .drinks-section { padding-bottom: 1.5rem; }
-  .drinks-hero { margin-bottom: 0.75rem; }
+  .drinks-hero { margin-bottom: 0.75rem; padding-left: 1.75rem; }
   .drinks-hero .section-heading { font-size: clamp(1.75rem, 3.5vw, 2.5rem); }
   .pour-stage {
     width: min(100%, calc(62vh * 0.9), 30rem);
     margin-inline: auto;
-  }
-  .pour-btn-name {
-    font-size: 1.375rem;
-    letter-spacing: 0;
-  }
-  .pour-btn-sub { font-size: 0.875rem; }
-  .pour-order-name {
-    font-size: 1.5rem;
-    letter-spacing: 0;
   }
 }
 
@@ -1097,7 +1100,7 @@ main { max-width: 80rem; margin-inline: auto; padding: 0 1rem 3rem; }
 .cart-drawer .header span {
   font-family: var(--font-display);
   font-size: 1.25rem;
-  letter-spacing: -0.01em;
+  letter-spacing: 0;
 }
 .cart-drawer .close {
   display: inline-flex;
@@ -1266,7 +1269,7 @@ footer p { margin: 0; }
 
 .hero { width: 100%; }
 
-.belt-container { width: 100%; max-width: 100%; min-width: 0; }
+.belt-container { position: relative; isolation: isolate; width: 100%; max-width: 100%; min-width: 0; }
 
 @media (max-width: 1023px) {
   .hero {

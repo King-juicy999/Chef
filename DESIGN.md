@@ -45,11 +45,11 @@ Sparingly, by rule: the See full menu pill, the header cart count badge, focus r
 
 ## 3. Typography
 
-- **Instrument Serif** for the hero heading, the restaurant name, dish names (menu cards, dialog title, belt caption title). Regular 400 only; the family has no other weight.
-- **Instrument Sans** for body text, labels, buttons, chips and UI text: weights 400, 500, 600, 700.
-- Two families only. Fallbacks: `"Instrument Serif", Georgia, serif` and `"Instrument Sans", system-ui, sans-serif`.
+- **Fraunces** for the hero heading, the restaurant name, dish names (menu cards, dialog title, belt caption title). Regular 400 and 500 only; the family has no other weight.
+- **DM Sans** for body text, labels, buttons, chips and UI text: weights 400, 500, 600.
+- Two families only. Fallbacks: `"Fraunces", "Segoe UI", Georgia, serif` and `"DM Sans", system-ui, sans-serif`.
 - Hero heading is a large serif at tight leading (`line-height: 1.05`, tracking about `-0.015em`). Small uppercase labels use `0.2em` letter spacing at 500 weight.
-- Prices use a dedicated stack, `--font-price: "Instrument Sans", "Segoe UI", system-ui, sans-serif`, because neither Instrument family contains the naira sign (verified: no U+20A6 in the Google Fonts subsets). The browser falls back per glyph to a system font that has it. Prices keep `tabular-nums`.
+- Prices use a dedicated stack, `--font-price: "DM Sans", "Segoe UI", system-ui, sans-serif`, because neither Fraunces nor DM Sans contains the naira sign (verified: no U+20A6 in the Google Fonts subsets). The browser falls back per glyph to a system font that has it. Prices keep `tabular-nums`.
 
 ## 4. Spacing, radius and shadows
 
